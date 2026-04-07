@@ -63,7 +63,7 @@ Ver `.env.example`. Todas las variables necesarias:
 - `NEXT_PUBLIC_CTA_TIMESTAMP_SECONDS=1500` — Idem (publico para el cliente)
 - `SCHOOL_COMMUNITY_URL=https://...` — URL de la comunidad de School
 - `NEXT_PUBLIC_SCHOOL_COMMUNITY_URL=https://...` — Idem (publico)
-- `NEXT_PUBLIC_BASE_URL=https://tu-dominio.vercel.app`
+- `NEXT_PUBLIC_BASE_URL=https://funnel-menopausia-app.vercel.app`
 - `NEXT_PUBLIC_FB_PIXEL_ID=` — ID del Pixel de Facebook (opcional)
 
 ## Reglas del Reproductor de Video
@@ -79,15 +79,12 @@ Ver `.env.example`. Todas las variables necesarias:
 El build local falla con `NEXT_MISSING_LAMBDA` en rutas de admin. Hay que usar GitHub.
 
 ### Proceso correcto (una sola vez):
-1. Crear repo en GitHub: https://github.com/new (privado recomendado)
-2. Desde terminal en la carpeta del proyecto:
-   ```
-   git remote add origin https://github.com/TU_USUARIO/funnel-menopausia.git
-   git push -u origin master
-   ```
-3. En Vercel dashboard: https://vercel.com/new → Import Git Repository → seleccionar repo
-4. En la seccion "Environment Variables" del wizard, anadir todas las variables de produccion (ver arriba)
-5. Click Deploy — el build ocurre en los servidores Linux de Vercel (funciona correctamente)
+1. Repo en GitHub: https://github.com/arturodiaz1991/funnel-menopausia (publico)
+2. Proyecto en Vercel: https://vercel.com/arturodiaz1991-4263s-projects/funnel-menopausia-app
+3. URL de produccion: https://funnel-menopausia-app.vercel.app
+4. Cada `git push` despliega automaticamente
+
+**IMPORTANTE al crear proyecto nuevo en Vercel**: Usar cuenta personal (no el equipo) para evitar restricciones del plan Hobby. El repo debe ser publico o estar en la cuenta personal.
 
 ### Actualizaciones futuras:
 Una vez conectado GitHub, cada `git push` despliega automaticamente.
