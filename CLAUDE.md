@@ -25,15 +25,30 @@ Incluye dashboard de analiticas por lead y emails automaticos de abandono.
 - `src/app/page.tsx` — Landing de captacion (formulario)
 - `src/app/vsl/page.tsx` — Pagina VSL (reproductor + CTA)
 - `src/app/admin/` — Dashboard de admin (acceso en /admin, contrasena en ADMIN_PASSWORD)
+- `src/app/admin/leads/page.tsx` — Lista de leads + boton exportar
+- `src/app/admin/settings/page.tsx` — Configuracion (CTA, School URL, ejecutar cron)
 - `src/app/api/` — API routes
+- `src/app/api/admin/export/route.ts` — GET: exportar leads a CSV con filtros
 - `src/components/video-player.tsx` — Reproductor restringido (NO adelantar)
 - `src/components/facebook-pixel.tsx` — Pixel de Facebook (se inyecta en layout global)
+- `src/components/admin/export-modal.tsx` — Modal de exportacion con filtros
 - `src/db/schema.ts` — Esquema de BD (fuente de verdad)
 - `src/db/index.ts` — Conexion DB: usa TURSO_DATABASE_URL si existe, sino DATABASE_URL (local)
+- `src/db/queries.ts` — Queries reutilizables incl. getLeadsForExport() con filtros
 - `src/lib/email-templates/` — Plantillas de email (6 segmentos de abandono)
 - `src/lib/config.ts` — Config centralizada desde env vars
 - `vercel.json` — Cron de abandono configurado (1x/dia a las 8am — free tier Vercel)
 - `scripts/migrate-turso.ts` — Script de migracion para Turso
+
+## Funcionalidades Implementadas
+- **Landing** (`/`): Formulario nombre+email, captura UTMs, email bienvenida, redirige a /vsl
+- **VSL** (`/vsl`): Reproductor restringido (no adelantar), CTA aparece en minuto configurable
+- **Tracking**: Eventos de video (play, pause, seek, timeupdate) guardados en BD por lead
+- **Emails abandono**: 6 segmentos segun minuto de abandono, cron diario a las 8am
+- **Admin dashboard** (`/admin`): Stats generales, embudo de conversion, heatmap de retencion
+- **Admin leads** (`/admin/leads`): Tabla de leads con tiempo visto, CTA, emails; drill-down por lead con timeline completo de eventos
+- **Exportacion CSV** (`/admin/leads` → boton "Exportar leads"): Filtros por fecha, tiempo minimo visto, etapa del funnel, emails enviados; preview de cantidad antes de exportar
+- **Facebook Pixel**: Se activa con NEXT_PUBLIC_FB_PIXEL_ID; trackea PageView en cada ruta
 
 ## Convenciones
 - Tiempos en BD: Unix timestamps (segundos)
