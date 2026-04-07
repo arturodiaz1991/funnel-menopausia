@@ -1,5 +1,5 @@
 import { db } from "./index";
-import { leads, leadSessions, videoEvents, emailLog, appConfig } from "./schema";
+import { leads, leadSessions, videoEvents, emailLog, appConfig, pageViews } from "./schema";
 import { eq, sql, desc, gte, lte, and, count } from "drizzle-orm";
 
 export async function getAppConfig(key: string): Promise<string | null> {
@@ -14,11 +14,18 @@ export async function setAppConfig(key: string, value: string): Promise<void> {
     .onConflictDoUpdate({ target: appConfig.key, set: { value, updatedAt: new Date() } });
 }
 
+export async function trackPageView(page: string): Promise<void> {
+  await db.insert(pageViews).values({ page, createdAt: new Date() });
+}
+
 export async function getFunnelStats() {
   const now = new Date();
   const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
   const weekStart = new Date(todayStart);
   weekStart.setDate(weekStart.getDate() - 7);
+
+  const landingVisitsRow = await db.select({ count: count() }).from(pageViews)
+    .where(eq(pageViews.page, "landing")).get();
 
   const totalLeads = await db.select({ count: count() }).from(leads).get();
   const leadsToday = await db.select({ count: count() }).from(leads)
@@ -38,8 +45,10 @@ export async function getFunnelStats() {
 
   const total = totalLeads?.count || 0;
   const sessions = totalSessions?.count || 0;
+  const landing = landingVisitsRow?.count || 0;
 
   return {
+    landingVisits: landing,
     totalLeads: total,
     leadsToday: leadsToday?.count || 0,
     leadsThisWeek: leadsThisWeek?.count || 0,

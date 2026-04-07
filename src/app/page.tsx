@@ -1,9 +1,11 @@
 import { Suspense } from "react";
 import LeadForm from "@/components/lead-form";
+import LandingTracker from "@/components/landing-tracker";
 
 export default function LandingPage() {
   return (
     <main className="flex flex-1 flex-col items-center justify-center px-4 py-16">
+      <LandingTracker />
       <div className="w-full max-w-md text-center space-y-8">
         <div className="space-y-3">
           <p className="text-sm font-medium uppercase tracking-widest text-primary">

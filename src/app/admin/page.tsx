@@ -49,10 +49,22 @@ export default function AdminDashboard() {
         <div className="rounded-2xl border border-foreground/5 bg-white p-6">
           <h3 className="text-lg font-semibold mb-4">Embudo de Conversion</h3>
           <div className="flex flex-col gap-2 max-w-md mx-auto">
-            <FunnelStep label="Leads registrados" value={stats.totalLeads} percent={100} />
-            <FunnelStep label="Vieron el VSL" value={Math.round(stats.totalLeads * stats.vslViewRate / 100)} percent={stats.vslViewRate} />
-            <FunnelStep label="Vieron el CTA" value={Math.round(stats.totalLeads * stats.ctaShowRate / 100)} percent={stats.ctaShowRate} />
-            <FunnelStep label="Clickearon CTA" value={Math.round(stats.totalLeads * stats.ctaClickRate / 100)} percent={stats.ctaClickRate} />
+            {(() => {
+              const base = stats.landingVisits || stats.totalLeads;
+              const vslViewers = Math.round(stats.totalLeads * stats.vslViewRate / 100);
+              const ctaViewers = Math.round(vslViewers * stats.ctaShowRate / 100);
+              const ctaClickers = Math.round(vslViewers * stats.ctaClickRate / 100);
+              const pct = (n: number) => base > 0 ? (n / base) * 100 : 0;
+              return (
+                <>
+                  <FunnelStep label="Visitaron la landing" value={stats.landingVisits} percent={100} />
+                  <FunnelStep label="Leads registrados" value={stats.totalLeads} percent={pct(stats.totalLeads)} />
+                  <FunnelStep label="Vieron el VSL" value={vslViewers} percent={pct(vslViewers)} />
+                  <FunnelStep label="Vieron el CTA" value={ctaViewers} percent={pct(ctaViewers)} />
+                  <FunnelStep label="Clickearon CTA" value={ctaClickers} percent={pct(ctaClickers)} />
+                </>
+              );
+            })()}
           </div>
         </div>
       )}

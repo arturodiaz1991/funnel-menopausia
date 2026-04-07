@@ -28,6 +28,7 @@ export interface LeadWithStats {
 }
 
 export interface FunnelStats {
+  landingVisits: number;
   totalLeads: number;
   leadsToday: number;
   leadsThisWeek: number;

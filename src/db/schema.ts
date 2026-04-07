@@ -49,6 +49,15 @@ export const appConfig = sqliteTable("app_config", {
   updatedAt: integer("updated_at", { mode: "timestamp" }).notNull().default(sql`(unixepoch())`),
 });
 
+export const pageViews = sqliteTable("page_views", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  page: text("page").notNull(), // 'landing', 'vsl', etc.
+  createdAt: integer("created_at", { mode: "timestamp" }).notNull().default(sql`(unixepoch())`),
+}, (table) => [
+  index("idx_page_views_page").on(table.page),
+  index("idx_page_views_created").on(table.createdAt),
+]);
+
 export const emailLog = sqliteTable("email_log", {
   id: integer("id").primaryKey({ autoIncrement: true }),
   leadId: text("lead_id").notNull().references(() => leads.id),
