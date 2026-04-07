@@ -8,6 +8,7 @@ import { useCtaVisibility } from "@/hooks/use-cta-visibility";
 
 const CTA_TIMESTAMP = parseInt(process.env.NEXT_PUBLIC_CTA_TIMESTAMP_SECONDS || "30", 10);
 const SCHOOL_URL = process.env.NEXT_PUBLIC_SCHOOL_COMMUNITY_URL || "https://school.com/tu-comunidad";
+const VIDEO_URL = process.env.NEXT_PUBLIC_VIDEO_URL || "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4";
 
 export default function VSLPage() {
   const { trackEvent } = useVideoTracker();
@@ -53,7 +54,7 @@ export default function VSLPage() {
         </p>
 
         <VideoPlayer
-          src="/video/vsl-placeholder.mp4"
+          src={VIDEO_URL}
           onTimeUpdate={handleTimeUpdate}
           onPlay={handlePlay}
           onPause={handlePause}
