@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { Geist } from "next/font/google";
 import "./globals.css";
-import FacebookPixel from "@/components/facebook-pixel";
+import PixelLoader from "@/components/pixel-loader";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -22,7 +22,7 @@ export default function RootLayout({
   return (
     <html lang="es" className={`${geistSans.variable} h-full antialiased`}>
       <body className="min-h-full flex flex-col font-sans">
-        <FacebookPixel />
+        <PixelLoader />
         {children}
       </body>
     </html>

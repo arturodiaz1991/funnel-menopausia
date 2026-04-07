@@ -11,22 +11,21 @@ declare global {
   }
 }
 
-const PIXEL_ID = process.env.NEXT_PUBLIC_FB_PIXEL_ID;
-
-function FacebookPixelInner() {
+function FacebookPixelInner({ pixelId }: { pixelId: string }) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
   useEffect(() => {
-    if (!PIXEL_ID || typeof window.fbq !== "function") return;
+    if (!pixelId || typeof window.fbq !== "function") return;
     window.fbq("track", "PageView");
-  }, [pathname, searchParams]);
+  }, [pathname, searchParams, pixelId]);
 
   return null;
 }
 
-export default function FacebookPixel() {
-  if (!PIXEL_ID) return null;
+export default function FacebookPixel({ pixelId }: { pixelId?: string }) {
+  const id = pixelId || process.env.NEXT_PUBLIC_FB_PIXEL_ID;
+  if (!id) return null;
 
   return (
     <>
@@ -43,7 +42,7 @@ export default function FacebookPixel() {
             t.src=v;s=b.getElementsByTagName(e)[0];
             s.parentNode.insertBefore(t,s)}(window, document,'script',
             'https://connect.facebook.net/en_US/fbevents.js');
-            fbq('init', '${PIXEL_ID}');
+            fbq('init', '${id}');
             fbq('track', 'PageView');
           `,
         }}
@@ -54,11 +53,11 @@ export default function FacebookPixel() {
           height="1"
           width="1"
           style={{ display: "none" }}
-          src={`https://www.facebook.com/tr?id=${PIXEL_ID}&ev=PageView&noscript=1`}
+          src={`https://www.facebook.com/tr?id=${id}&ev=PageView&noscript=1`}
         />
       </noscript>
       <Suspense fallback={null}>
-        <FacebookPixelInner />
+        <FacebookPixelInner pixelId={id} />
       </Suspense>
     </>
   );
