@@ -9,6 +9,7 @@ export default function LeadForm() {
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [privacyAccepted, setPrivacyAccepted] = useState(false);
+  const [privacyError, setPrivacyError] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -28,7 +29,11 @@ export default function LeadForm() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!privacyAccepted) return;
+    if (!privacyAccepted) {
+      setPrivacyError(true);
+      return;
+    }
+    setPrivacyError(false);
     setError("");
     setLoading(true);
 
@@ -99,7 +104,7 @@ export default function LeadForm() {
           type="checkbox"
           required
           checked={privacyAccepted}
-          onChange={(e) => setPrivacyAccepted(e.target.checked)}
+          onChange={(e) => { setPrivacyAccepted(e.target.checked); setPrivacyError(false); }}
           className="mt-0.5 h-4 w-4 shrink-0 rounded border-foreground/20 accent-primary cursor-pointer"
         />
         <label htmlFor="privacy" className="text-xs text-muted leading-relaxed cursor-pointer">
@@ -121,13 +126,19 @@ export default function LeadForm() {
         </label>
       </div>
 
+      {privacyError && (
+        <p className="text-xs text-red-500">
+          Debes aceptar la politica de privacidad para continuar.
+        </p>
+      )}
+
       {error && (
         <p className="text-sm text-red-600">{error}</p>
       )}
 
       <button
         type="submit"
-        disabled={loading || !privacyAccepted}
+        disabled={loading}
         className="w-full rounded-xl bg-primary px-6 py-3.5 text-base font-semibold text-white transition-colors hover:bg-primary-hover disabled:opacity-50 disabled:cursor-not-allowed"
       >
         {loading ? "Registrando..." : "Acceder a la Clase Gratuita"}
