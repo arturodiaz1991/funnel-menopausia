@@ -43,6 +43,12 @@ export const leadSessions = sqliteTable("lead_sessions", {
   index("idx_sessions_lead").on(table.leadId),
 ]);
 
+export const appConfig = sqliteTable("app_config", {
+  key: text("key").primaryKey(),
+  value: text("value").notNull(),
+  updatedAt: integer("updated_at", { mode: "timestamp" }).notNull().default(sql`(unixepoch())`),
+});
+
 export const emailLog = sqliteTable("email_log", {
   id: integer("id").primaryKey({ autoIncrement: true }),
   leadId: text("lead_id").notNull().references(() => leads.id),

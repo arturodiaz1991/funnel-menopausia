@@ -8,6 +8,13 @@
       "when": 1775500401629,
       "tag": "0000_whole_sasquatch",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "6",
+      "when": 1775571579134,
+      "tag": "0001_new_paibok",
+      "breakpoints": true
     }
   ]
 }

@@ -1,6 +1,18 @@
 import { db } from "./index";
-import { leads, leadSessions, videoEvents, emailLog } from "./schema";
+import { leads, leadSessions, videoEvents, emailLog, appConfig } from "./schema";
 import { eq, sql, desc, gte, lte, and, count } from "drizzle-orm";
+
+export async function getAppConfig(key: string): Promise<string | null> {
+  const row = await db.select().from(appConfig).where(eq(appConfig.key, key)).get();
+  return row?.value ?? null;
+}
+
+export async function setAppConfig(key: string, value: string): Promise<void> {
+  await db
+    .insert(appConfig)
+    .values({ key, value, updatedAt: new Date() })
+    .onConflictDoUpdate({ target: appConfig.key, set: { value, updatedAt: new Date() } });
+}
 
 export async function getFunnelStats() {
   const now = new Date();
