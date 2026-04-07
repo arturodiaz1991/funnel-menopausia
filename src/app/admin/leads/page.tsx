@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { useSearchParams } from "next/navigation";
+import { useState, useEffect, useCallback } from "react";
+import { useSearchParams, useRouter } from "next/navigation";
 import { useAdmin } from "../layout";
 import LeadTable from "@/components/admin/lead-table";
 import LeadTimeline from "@/components/admin/lead-timeline";
@@ -45,6 +45,7 @@ interface LeadDetail {
 export default function LeadsPage() {
   const { password } = useAdmin();
   const searchParams = useSearchParams();
+  const router = useRouter();
   const selectedLeadId = searchParams.get("id");
 
   const [leads, setLeads] = useState<LeadWithStats[]>([]);
@@ -54,17 +55,7 @@ export default function LeadsPage() {
   const [loading, setLoading] = useState(true);
   const [showExport, setShowExport] = useState(false);
 
-  useEffect(() => {
-    if (!password) return;
-
-    if (selectedLeadId) {
-      fetchLeadDetail(selectedLeadId);
-    } else {
-      fetchLeads();
-    }
-  }, [password, page, selectedLeadId]);
-
-  async function fetchLeads() {
+  const fetchLeads = useCallback(async () => {
     setLoading(true);
     try {
       const res = await fetch(`/api/admin/leads?page=${page}`, {
@@ -80,7 +71,16 @@ export default function LeadsPage() {
     } finally {
       setLoading(false);
     }
-  }
+  }, [password, page]);
+
+  useEffect(() => {
+    if (!password) return;
+    if (selectedLeadId) {
+      fetchLeadDetail(selectedLeadId);
+    } else {
+      fetchLeads();
+    }
+  }, [password, page, selectedLeadId]);
 
   async function fetchLeadDetail(id: string) {
     setLoading(true);
@@ -98,6 +98,26 @@ export default function LeadsPage() {
     }
   }
 
+  async function handleDelete(id: string) {
+    const name = leads.find((l) => l.id === id)?.fullName || leadDetail?.lead.fullName || "este lead";
+    if (!confirm(`¿Eliminar a ${name}? Esta acción no se puede deshacer.`)) return;
+
+    const res = await fetch(`/api/admin/leads?id=${id}`, {
+      method: "DELETE",
+      headers: { "x-admin-password": password },
+    });
+
+    if (res.ok) {
+      if (selectedLeadId) {
+        router.push("/admin/leads");
+      } else {
+        fetchLeads();
+      }
+    } else {
+      alert("Error al eliminar el lead.");
+    }
+  }
+
   if (loading) {
     return <p className="text-muted">Cargando...</p>;
   }
@@ -105,9 +125,17 @@ export default function LeadsPage() {
   if (selectedLeadId && leadDetail) {
     return (
       <div className="space-y-6">
-        <div className="flex items-center gap-4">
-          <a href="/admin/leads" className="text-primary hover:underline text-sm">&larr; Volver</a>
-          <h1 className="text-2xl font-bold">{leadDetail.lead.fullName}</h1>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <a href="/admin/leads" className="text-primary hover:underline text-sm">&larr; Volver</a>
+            <h1 className="text-2xl font-bold">{leadDetail.lead.fullName}</h1>
+          </div>
+          <button
+            onClick={() => handleDelete(leadDetail.lead.id)}
+            className="rounded-xl border border-red-200 px-4 py-2 text-sm font-medium text-red-500 hover:bg-red-50 transition-colors"
+          >
+            Eliminar lead
+          </button>
         </div>
 
         <div className="rounded-2xl border border-foreground/5 bg-white p-6">
@@ -147,7 +175,13 @@ export default function LeadsPage() {
           Exportar leads
         </button>
       </div>
-      <LeadTable leads={leads} page={page} totalPages={totalPages} onPageChange={setPage} />
+      <LeadTable
+        leads={leads}
+        page={page}
+        totalPages={totalPages}
+        onPageChange={setPage}
+        onDelete={handleDelete}
+      />
       {showExport && (
         <ExportModal password={password} onClose={() => setShowExport(false)} />
       )}

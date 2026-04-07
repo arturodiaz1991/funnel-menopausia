@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback } from "react";
+import { useCallback, useEffect } from "react";
 import VideoPlayer from "@/components/video-player";
 import CtaButton from "@/components/cta-button";
 import { useVideoTracker } from "@/hooks/use-video-tracker";
@@ -42,8 +42,14 @@ export default function VSLClient({ videoUrl }: VSLClientProps) {
     trackEvent({ type: "page_leave", timestampSec: currentTime });
   }, [trackEvent]);
 
+  useEffect(() => {
+    if (isVisible) {
+      trackEvent({ type: "cta_shown", timestampSec: CTA_TIMESTAMP });
+    }
+  }, [isVisible, trackEvent]);
+
   const handleCtaClick = useCallback(() => {
-    trackEvent({ type: "cta_clicked", timestampSec: 0 });
+    trackEvent({ type: "cta_clicked", timestampSec: CTA_TIMESTAMP });
   }, [trackEvent]);
 
   return (

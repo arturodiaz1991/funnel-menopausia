@@ -144,6 +144,31 @@ export default function SettingsPage() {
         </div>
 
         <div className="pt-4 border-t border-foreground/5">
+          <h3 className="text-sm font-semibold mb-2 text-red-600">Zona peligrosa</h3>
+          <p className="text-xs text-muted mb-3">
+            Elimina todos los leads, sesiones, eventos y emails de la base de datos. Irreversible.
+          </p>
+          <button
+            onClick={async () => {
+              if (!confirm("¿Seguro que quieres borrar TODOS los datos? Esta acción no se puede deshacer.")) return;
+              if (!confirm("Última confirmación: se borrarán todos los leads, sesiones y eventos.")) return;
+              const res = await fetch("/api/admin/reset", {
+                method: "DELETE",
+                headers: { "x-admin-password": password },
+              });
+              if (res.ok) {
+                alert("Datos borrados correctamente.");
+              } else {
+                alert("Error al borrar los datos.");
+              }
+            }}
+            className="rounded-xl border border-red-200 px-4 py-2 text-sm font-medium text-red-500 hover:bg-red-50 transition-colors"
+          >
+            Borrar todos los datos
+          </button>
+        </div>
+
+        <div className="pt-4 border-t border-foreground/5">
           <h3 className="text-sm font-semibold mb-2">Ejecutar cron manualmente</h3>
           <p className="text-xs text-muted mb-3">
             Procesa las sesiones abandonadas y envia los emails correspondientes.

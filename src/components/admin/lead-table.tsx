@@ -19,9 +19,10 @@ interface LeadTableProps {
   page: number;
   totalPages: number;
   onPageChange: (page: number) => void;
+  onDelete: (id: string) => void;
 }
 
-export default function LeadTable({ leads, page, totalPages, onPageChange }: LeadTableProps) {
+export default function LeadTable({ leads, page, totalPages, onPageChange, onDelete }: LeadTableProps) {
   return (
     <div className="rounded-2xl border border-foreground/5 bg-white overflow-hidden">
       <div className="overflow-x-auto">
@@ -35,6 +36,7 @@ export default function LeadTable({ leads, page, totalPages, onPageChange }: Lea
               <th className="px-4 py-3 text-center font-medium text-muted">CTA</th>
               <th className="px-4 py-3 text-center font-medium text-muted">Emails</th>
               <th className="px-4 py-3 text-left font-medium text-muted">UTM</th>
+              <th className="px-4 py-3" />
             </tr>
           </thead>
           <tbody>
@@ -59,11 +61,20 @@ export default function LeadTable({ leads, page, totalPages, onPageChange }: Lea
                 </td>
                 <td className="px-4 py-3 text-center">{lead.emailsSent}</td>
                 <td className="px-4 py-3 text-xs text-muted">{lead.utmSource || "-"}</td>
+                <td className="px-4 py-3 text-right">
+                  <button
+                    onClick={() => onDelete(lead.id)}
+                    className="text-xs text-red-400 hover:text-red-600 transition-colors"
+                    title="Eliminar lead"
+                  >
+                    Eliminar
+                  </button>
+                </td>
               </tr>
             ))}
             {leads.length === 0 && (
               <tr>
-                <td colSpan={7} className="px-4 py-8 text-center text-muted">
+                <td colSpan={8} className="px-4 py-8 text-center text-muted">
                   Aun no hay leads registrados
                 </td>
               </tr>
@@ -72,7 +83,6 @@ export default function LeadTable({ leads, page, totalPages, onPageChange }: Lea
         </table>
       </div>
 
-      {/* Pagination */}
       {totalPages > 1 && (
         <div className="flex items-center justify-between px-4 py-3 border-t border-foreground/5">
           <button
