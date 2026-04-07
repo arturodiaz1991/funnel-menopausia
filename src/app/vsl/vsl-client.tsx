@@ -7,13 +7,13 @@ import { useVideoTracker } from "@/hooks/use-video-tracker";
 import { useCtaVisibility } from "@/hooks/use-cta-visibility";
 
 const CTA_TIMESTAMP = parseInt(process.env.NEXT_PUBLIC_CTA_TIMESTAMP_SECONDS || "30", 10);
-const SCHOOL_URL = process.env.NEXT_PUBLIC_SCHOOL_COMMUNITY_URL || "https://school.com/tu-comunidad";
 
 interface VSLClientProps {
   videoUrl: string;
+  schoolUrl: string;
 }
 
-export default function VSLClient({ videoUrl }: VSLClientProps) {
+export default function VSLClient({ videoUrl, schoolUrl }: VSLClientProps) {
   const { trackEvent } = useVideoTracker();
   const { isVisible, checkVisibility } = useCtaVisibility(CTA_TIMESTAMP);
 
@@ -74,7 +74,7 @@ export default function VSLClient({ videoUrl }: VSLClientProps) {
 
         <CtaButton
           isVisible={isVisible}
-          url={SCHOOL_URL}
+          url={schoolUrl}
           onClick={handleCtaClick}
         />
       </div>

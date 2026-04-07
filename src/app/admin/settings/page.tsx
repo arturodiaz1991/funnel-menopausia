@@ -9,10 +9,6 @@ export default function SettingsPage() {
   const [ctaTimestamp] = useState(
     process.env.NEXT_PUBLIC_CTA_TIMESTAMP_SECONDS || "30"
   );
-  const [schoolUrl] = useState(
-    process.env.NEXT_PUBLIC_SCHOOL_COMMUNITY_URL || "https://school.com/tu-comunidad"
-  );
-
   const [videoUrl, setVideoUrl] = useState("");
   const [videoSaving, setVideoSaving] = useState(false);
   const [videoStatus, setVideoStatus] = useState<"idle" | "saved" | "error">("idle");
@@ -20,6 +16,10 @@ export default function SettingsPage() {
   const [pixelId, setPixelId] = useState("");
   const [pixelSaving, setPixelSaving] = useState(false);
   const [pixelStatus, setPixelStatus] = useState<"idle" | "saved" | "error">("idle");
+
+  const [schoolUrl, setSchoolUrl] = useState("");
+  const [schoolSaving, setSchoolSaving] = useState(false);
+  const [schoolStatus, setSchoolStatus] = useState<"idle" | "saved" | "error">("idle");
 
   useEffect(() => {
     if (!password) return;
@@ -30,6 +30,7 @@ export default function SettingsPage() {
       .then((data) => {
         if (data.video_url) setVideoUrl(data.video_url);
         if (data.fb_pixel_id) setPixelId(data.fb_pixel_id);
+        if (data.school_url) setSchoolUrl(data.school_url);
       })
       .catch(() => {});
   }, [password]);
@@ -52,6 +53,27 @@ export default function SettingsPage() {
       setVideoStatus("error");
     } finally {
       setVideoSaving(false);
+    }
+  }
+
+  async function handleSaveSchoolUrl() {
+    if (!schoolUrl.trim()) return;
+    setSchoolSaving(true);
+    setSchoolStatus("idle");
+    try {
+      const res = await fetch("/api/admin/config", {
+        method: "PUT",
+        headers: {
+          "x-admin-password": password,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ key: "school_url", value: schoolUrl }),
+      });
+      setSchoolStatus(res.ok ? "saved" : "error");
+    } catch {
+      setSchoolStatus("error");
+    } finally {
+      setSchoolSaving(false);
     }
   }
 
@@ -188,17 +210,30 @@ export default function SettingsPage() {
 
         <div>
           <label className="block text-sm font-medium text-foreground/80 mb-1.5">
-            URL de la Comunidad de School
+            URL del CTA (Comunidad de School)
           </label>
           <input
             type="url"
             value={schoolUrl}
-            disabled
-            className="w-full rounded-xl border border-foreground/10 bg-gray-50 px-4 py-3 text-base text-muted"
+            onChange={(e) => { setSchoolUrl(e.target.value); setSchoolStatus("idle"); }}
+            placeholder="https://school.com/tu-comunidad"
+            className="w-full rounded-xl border border-foreground/10 bg-white px-4 py-3 text-sm font-mono outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
           />
-          <p className="mt-1 text-xs text-muted">
-            Cambiar requiere actualizar SCHOOL_COMMUNITY_URL en Vercel.
-          </p>
+          <div className="flex items-center gap-3 mt-2">
+            <button
+              onClick={handleSaveSchoolUrl}
+              disabled={schoolSaving || !schoolUrl.trim()}
+              className="rounded-xl bg-primary px-5 py-2 text-sm font-medium text-white hover:bg-primary/90 transition-colors disabled:opacity-50"
+            >
+              {schoolSaving ? "Guardando..." : "Guardar URL"}
+            </button>
+            {schoolStatus === "saved" && (
+              <span className="text-sm text-green-600 font-medium">Guardado. El CTA ya apunta a esta URL.</span>
+            )}
+            {schoolStatus === "error" && (
+              <span className="text-sm text-red-600 font-medium">Error al guardar. Intenta de nuevo.</span>
+            )}
+          </div>
         </div>
 
         <div>
