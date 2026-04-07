@@ -8,16 +8,27 @@ export default function LeadForm() {
   const searchParams = useSearchParams();
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
+  const [privacyAccepted, setPrivacyAccepted] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  // Prefetch VSL page so navigation is instant after form submit
+  const [privacyUrl, setPrivacyUrl] = useState<string | null>(null);
+  const [privacyLinkText, setPrivacyLinkText] = useState("Politica de Privacidad");
+
   useEffect(() => {
     router.prefetch("/vsl");
+    fetch("/api/config/public")
+      .then((r) => r.json())
+      .then((data) => {
+        if (data.privacy_url) setPrivacyUrl(data.privacy_url);
+        if (data.privacy_link_text) setPrivacyLinkText(data.privacy_link_text);
+      })
+      .catch(() => {});
   }, [router]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    if (!privacyAccepted) return;
     setError("");
     setLoading(true);
 
@@ -81,13 +92,42 @@ export default function LeadForm() {
         />
       </div>
 
+      {/* Checkbox de privacidad */}
+      <div className="flex items-start gap-3">
+        <input
+          id="privacy"
+          type="checkbox"
+          required
+          checked={privacyAccepted}
+          onChange={(e) => setPrivacyAccepted(e.target.checked)}
+          className="mt-0.5 h-4 w-4 shrink-0 rounded border-foreground/20 accent-primary cursor-pointer"
+        />
+        <label htmlFor="privacy" className="text-xs text-muted leading-relaxed cursor-pointer">
+          He leido y acepto la{" "}
+          {privacyUrl ? (
+            <a
+              href={privacyUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-primary underline hover:text-primary/80"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {privacyLinkText}
+            </a>
+          ) : (
+            <span className="text-primary">{privacyLinkText}</span>
+          )}{" "}
+          y consiento el tratamiento de mis datos personales con la finalidad de recibir comunicaciones comerciales sobre los servicios ofrecidos, de conformidad con el Reglamento (UE) 2016/679 (RGPD) y la normativa nacional aplicable.
+        </label>
+      </div>
+
       {error && (
         <p className="text-sm text-red-600">{error}</p>
       )}
 
       <button
         type="submit"
-        disabled={loading}
+        disabled={loading || !privacyAccepted}
         className="w-full rounded-xl bg-primary px-6 py-3.5 text-base font-semibold text-white transition-colors hover:bg-primary-hover disabled:opacity-50 disabled:cursor-not-allowed"
       >
         {loading ? "Registrando..." : "Acceder a la Clase Gratuita"}

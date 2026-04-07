@@ -21,6 +21,11 @@ export default function SettingsPage() {
   const [schoolSaving, setSchoolSaving] = useState(false);
   const [schoolStatus, setSchoolStatus] = useState<"idle" | "saved" | "error">("idle");
 
+  const [privacyUrl, setPrivacyUrl] = useState("");
+  const [privacyLinkText, setPrivacyLinkText] = useState("");
+  const [privacySaving, setPrivacySaving] = useState(false);
+  const [privacyStatus, setPrivacyStatus] = useState<"idle" | "saved" | "error">("idle");
+
   useEffect(() => {
     if (!password) return;
     fetch("/api/admin/config", {
@@ -31,6 +36,8 @@ export default function SettingsPage() {
         if (data.video_url) setVideoUrl(data.video_url);
         if (data.fb_pixel_id) setPixelId(data.fb_pixel_id);
         if (data.school_url) setSchoolUrl(data.school_url);
+        if (data.privacy_url) setPrivacyUrl(data.privacy_url);
+        if (data.privacy_link_text) setPrivacyLinkText(data.privacy_link_text);
       })
       .catch(() => {});
   }, [password]);
@@ -53,6 +60,30 @@ export default function SettingsPage() {
       setVideoStatus("error");
     } finally {
       setVideoSaving(false);
+    }
+  }
+
+  async function handleSavePrivacy() {
+    setPrivacySaving(true);
+    setPrivacyStatus("idle");
+    try {
+      await Promise.all([
+        fetch("/api/admin/config", {
+          method: "PUT",
+          headers: { "x-admin-password": password, "Content-Type": "application/json" },
+          body: JSON.stringify({ key: "privacy_url", value: privacyUrl }),
+        }),
+        fetch("/api/admin/config", {
+          method: "PUT",
+          headers: { "x-admin-password": password, "Content-Type": "application/json" },
+          body: JSON.stringify({ key: "privacy_link_text", value: privacyLinkText || "Politica de Privacidad" }),
+        }),
+      ]);
+      setPrivacyStatus("saved");
+    } catch {
+      setPrivacyStatus("error");
+    } finally {
+      setPrivacySaving(false);
     }
   }
 
@@ -187,6 +218,68 @@ export default function SettingsPage() {
           <p className="mt-2 text-xs text-muted">
             Encuentra tu Pixel ID en Meta Business Suite &rarr; Eventos &rarr; Pixeles.
           </p>
+        </div>
+      </div>
+
+      {/* Politica de Privacidad */}
+      <div className="rounded-2xl border border-foreground/5 bg-white p-6 max-w-lg space-y-4">
+        <div>
+          <h2 className="text-base font-semibold mb-1">Politica de Privacidad</h2>
+          <p className="text-xs text-muted mb-4">
+            Configura el enlace y el texto que aparece en el checkbox obligatorio del formulario de captacion.
+          </p>
+
+          <div className="space-y-3">
+            <div>
+              <label className="block text-xs font-medium text-foreground/70 mb-1">
+                Texto del enlace (nombre visible)
+              </label>
+              <input
+                type="text"
+                value={privacyLinkText}
+                onChange={(e) => { setPrivacyLinkText(e.target.value); setPrivacyStatus("idle"); }}
+                placeholder="Politica de Privacidad"
+                className="w-full rounded-xl border border-foreground/10 bg-white px-4 py-3 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-foreground/70 mb-1">
+                URL de la Politica de Privacidad
+              </label>
+              <input
+                type="url"
+                value={privacyUrl}
+                onChange={(e) => { setPrivacyUrl(e.target.value); setPrivacyStatus("idle"); }}
+                placeholder="https://tudominio.com/privacidad"
+                className="w-full rounded-xl border border-foreground/10 bg-white px-4 py-3 text-sm font-mono outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
+              />
+            </div>
+          </div>
+
+          <div className="flex items-center gap-3 mt-3">
+            <button
+              onClick={handleSavePrivacy}
+              disabled={privacySaving}
+              className="rounded-xl bg-primary px-5 py-2 text-sm font-medium text-white hover:bg-primary/90 transition-colors disabled:opacity-50"
+            >
+              {privacySaving ? "Guardando..." : "Guardar"}
+            </button>
+            {privacyStatus === "saved" && (
+              <span className="text-sm text-green-600 font-medium">Guardado correctamente.</span>
+            )}
+            {privacyStatus === "error" && (
+              <span className="text-sm text-red-600 font-medium">Error al guardar.</span>
+            )}
+          </div>
+
+          <div className="mt-4 p-3 rounded-xl bg-background/60 border border-foreground/5">
+            <p className="text-xs text-muted font-medium mb-1">Vista previa del checkbox:</p>
+            <p className="text-xs text-muted leading-relaxed">
+              He leido y acepto la{" "}
+              <span className="text-primary underline">{privacyLinkText || "Politica de Privacidad"}</span>
+              {" "}y consiento el tratamiento de mis datos personales con la finalidad de recibir comunicaciones comerciales sobre los servicios ofrecidos, de conformidad con el Reglamento (UE) 2016/679 (RGPD) y la normativa nacional aplicable.
+            </p>
+          </div>
         </div>
       </div>
 
