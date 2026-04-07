@@ -1,6 +1,6 @@
 import { db } from "./index";
 import { leads, leadSessions, videoEvents, emailLog } from "./schema";
-import { eq, sql, desc, gte, and, count } from "drizzle-orm";
+import { eq, sql, desc, gte, lte, and, count } from "drizzle-orm";
 
 export async function getFunnelStats() {
   const now = new Date();
@@ -123,6 +123,84 @@ export async function getLeadDetail(leadId: string) {
     .all();
 
   return { lead, sessions, events, emails };
+}
+
+export async function getLeadsForExport(filters: {
+  dateFrom?: string;
+  dateTo?: string;
+  minWatchMinutes?: number;
+  funnelStage?: "all" | "vsl" | "cta_shown" | "cta_clicked";
+  emailSent?: "all" | "yes" | "no";
+}) {
+  const conditions = [];
+  if (filters.dateFrom) conditions.push(gte(leads.createdAt, new Date(filters.dateFrom)));
+  if (filters.dateTo) {
+    const to = new Date(filters.dateTo);
+    to.setHours(23, 59, 59, 999);
+    conditions.push(lte(leads.createdAt, to));
+  }
+
+  const allLeads = await db
+    .select({
+      id: leads.id,
+      fullName: leads.fullName,
+      email: leads.email,
+      createdAt: leads.createdAt,
+      utmSource: leads.utmSource,
+      utmMedium: leads.utmMedium,
+      utmCampaign: leads.utmCampaign,
+      utmContent: leads.utmContent,
+      utmTerm: leads.utmTerm,
+    })
+    .from(leads)
+    .where(conditions.length > 0 ? and(...conditions) : undefined)
+    .orderBy(desc(leads.createdAt))
+    .all();
+
+  const enriched = await Promise.all(
+    allLeads.map(async (lead) => {
+      const session = await db
+        .select({
+          maxTimestampSec: leadSessions.maxTimestampSec,
+          ctaShown: leadSessions.ctaShown,
+          ctaClicked: leadSessions.ctaClicked,
+        })
+        .from(leadSessions)
+        .where(eq(leadSessions.leadId, lead.id))
+        .orderBy(desc(leadSessions.maxTimestampSec))
+        .limit(1)
+        .get();
+
+      const emailCount = await db
+        .select({ count: count() })
+        .from(emailLog)
+        .where(eq(emailLog.leadId, lead.id))
+        .get();
+
+      return {
+        ...lead,
+        maxWatchSeconds: session?.maxTimestampSec || 0,
+        ctaShown: session?.ctaShown || false,
+        ctaClicked: session?.ctaClicked || false,
+        emailsSent: emailCount?.count || 0,
+        hasSession: !!session,
+      };
+    })
+  );
+
+  return enriched.filter((lead) => {
+    const minSec = (filters.minWatchMinutes || 0) * 60;
+    if (lead.maxWatchSeconds < minSec) return false;
+
+    if (filters.funnelStage === "vsl" && !lead.hasSession) return false;
+    if (filters.funnelStage === "cta_shown" && !lead.ctaShown) return false;
+    if (filters.funnelStage === "cta_clicked" && !lead.ctaClicked) return false;
+
+    if (filters.emailSent === "yes" && lead.emailsSent === 0) return false;
+    if (filters.emailSent === "no" && lead.emailsSent > 0) return false;
+
+    return true;
+  });
 }
 
 export async function getHeatmapData(bucketSizeSeconds = 5) {

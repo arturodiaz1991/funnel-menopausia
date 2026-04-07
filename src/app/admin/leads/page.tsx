@@ -5,6 +5,7 @@ import { useSearchParams } from "next/navigation";
 import { useAdmin } from "../layout";
 import LeadTable from "@/components/admin/lead-table";
 import LeadTimeline from "@/components/admin/lead-timeline";
+import ExportModal from "@/components/admin/export-modal";
 import type { LeadWithStats } from "@/types";
 
 interface LeadDetail {
@@ -51,6 +52,7 @@ export default function LeadsPage() {
   const [totalPages, setTotalPages] = useState(1);
   const [leadDetail, setLeadDetail] = useState<LeadDetail | null>(null);
   const [loading, setLoading] = useState(true);
+  const [showExport, setShowExport] = useState(false);
 
   useEffect(() => {
     if (!password) return;
@@ -136,8 +138,19 @@ export default function LeadsPage() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold">Leads</h1>
+      <div className="flex items-center justify-between">
+        <h1 className="text-2xl font-bold">Leads</h1>
+        <button
+          onClick={() => setShowExport(true)}
+          className="rounded-xl bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary/90 transition-colors"
+        >
+          Exportar leads
+        </button>
+      </div>
       <LeadTable leads={leads} page={page} totalPages={totalPages} onPageChange={setPage} />
+      {showExport && (
+        <ExportModal password={password} onClose={() => setShowExport(false)} />
+      )}
     </div>
   );
 }
