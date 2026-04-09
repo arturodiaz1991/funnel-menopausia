@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getAppConfig, setAppConfig } from "@/db/queries";
 import { config } from "@/lib/config";
 
-const ALLOWED_KEYS = ["video_url", "fb_pixel_id", "school_url", "privacy_url", "privacy_link_text", "cookie_banner_enabled", "contact_email"] as const;
+const ALLOWED_KEYS = ["video_url", "fb_pixel_id", "school_url", "privacy_url", "privacy_link_text", "cookie_banner_enabled", "contact_email", "skip_landing"] as const;
 
 export async function GET(request: NextRequest) {
   const password = request.headers.get("x-admin-password");

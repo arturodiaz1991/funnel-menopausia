@@ -1,12 +1,15 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { usePathname } from "next/navigation";
 import Link from "next/link";
 
 export default function CookieBanner() {
+  const pathname = usePathname();
   const [show, setShow] = useState(false);
 
   useEffect(() => {
+    if (pathname.startsWith("/admin")) return; // El admin es el titular — no necesita consentimiento
     const consent = localStorage.getItem("cookie_consent");
     if (consent !== null) return; // Ya decidido — no mostrar banner
 

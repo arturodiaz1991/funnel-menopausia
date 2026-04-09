@@ -1,8 +1,19 @@
+export const dynamic = "force-dynamic";
+
 import { Suspense } from "react";
+import { redirect } from "next/navigation";
 import LeadForm from "@/components/lead-form";
 import LandingTracker from "@/components/landing-tracker";
+import { getAppConfig } from "@/db/queries";
 
-export default function LandingPage() {
+export default async function LandingPage() {
+  try {
+    const skipLanding = await getAppConfig("skip_landing");
+    if (skipLanding === "true") redirect("/vsl");
+  } catch {
+    // Error de BD — mostrar landing normalmente
+  }
+
   return (
     <main className="flex flex-1 flex-col items-center justify-center px-4 py-16">
       <LandingTracker />

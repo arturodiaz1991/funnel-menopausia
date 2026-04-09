@@ -34,6 +34,10 @@ export default function SettingsPage() {
   const [contactEmailSaving, setContactEmailSaving] = useState(false);
   const [contactEmailStatus, setContactEmailStatus] = useState<"idle" | "saved" | "error">("idle");
 
+  const [skipLanding, setSkipLanding] = useState(false);
+  const [skipLandingSaving, setSkipLandingSaving] = useState(false);
+  const [skipLandingStatus, setSkipLandingStatus] = useState<"idle" | "saved" | "error">("idle");
+
   useEffect(() => {
     if (!password) return;
     fetch("/api/admin/config", {
@@ -48,6 +52,7 @@ export default function SettingsPage() {
         if (data.privacy_link_text) setPrivacyLinkText(data.privacy_link_text);
         setCookieBannerEnabled(data.cookie_banner_enabled !== "false");
         if (data.contact_email) setContactEmail(data.contact_email);
+        setSkipLanding(data.skip_landing === "true");
       })
       .catch(() => {});
   }, [password]);
@@ -133,6 +138,28 @@ export default function SettingsPage() {
       setContactEmailStatus("error");
     } finally {
       setContactEmailSaving(false);
+    }
+  }
+
+  async function handleSaveSkipLanding(skip: boolean) {
+    setSkipLandingSaving(true);
+    setSkipLandingStatus("idle");
+    try {
+      const res = await fetch("/api/admin/config", {
+        method: "PUT",
+        headers: { "x-admin-password": password, "Content-Type": "application/json" },
+        body: JSON.stringify({ key: "skip_landing", value: skip ? "true" : "false" }),
+      });
+      if (res.ok) {
+        setSkipLanding(skip);
+        setSkipLandingStatus("saved");
+      } else {
+        setSkipLandingStatus("error");
+      }
+    } catch {
+      setSkipLandingStatus("error");
+    } finally {
+      setSkipLandingSaving(false);
     }
   }
 
@@ -411,6 +438,63 @@ export default function SettingsPage() {
               <span className="text-sm text-red-600 font-medium">Error al guardar.</span>
             )}
           </div>
+        </div>
+      </div>
+
+      {/* Flujo del funnel */}
+      <div className="rounded-2xl border border-foreground/5 bg-white p-6 max-w-lg space-y-4">
+        <div>
+          <h2 className="text-base font-semibold mb-1">Flujo del funnel</h2>
+          <p className="text-xs text-muted mb-4">
+            Elige si los visitantes deben pasar por la landing de captacion de datos antes de ver el VSL, o si aterrizan directamente en el VSL.
+          </p>
+
+          <div className="space-y-3">
+            <button
+              onClick={() => handleSaveSkipLanding(false)}
+              disabled={skipLandingSaving || !skipLanding}
+              className={`w-full flex items-start gap-3 rounded-xl border p-4 text-left transition-colors ${
+                !skipLanding
+                  ? "border-primary bg-primary/5"
+                  : "border-foreground/10 hover:bg-foreground/5"
+              }`}
+            >
+              <span className={`mt-0.5 h-4 w-4 shrink-0 rounded-full border-2 flex items-center justify-center ${!skipLanding ? "border-primary" : "border-foreground/20"}`}>
+                {!skipLanding && <span className="h-2 w-2 rounded-full bg-primary block" />}
+              </span>
+              <span>
+                <span className="block text-sm font-medium text-foreground">Landing → VSL (recomendado)</span>
+                <span className="block text-xs text-muted mt-0.5">Los visitantes ven primero el formulario de captacion. Solo acceden al VSL quienes dejan sus datos.</span>
+              </span>
+            </button>
+
+            <button
+              onClick={() => handleSaveSkipLanding(true)}
+              disabled={skipLandingSaving || skipLanding}
+              className={`w-full flex items-start gap-3 rounded-xl border p-4 text-left transition-colors ${
+                skipLanding
+                  ? "border-primary bg-primary/5"
+                  : "border-foreground/10 hover:bg-foreground/5"
+              }`}
+            >
+              <span className={`mt-0.5 h-4 w-4 shrink-0 rounded-full border-2 flex items-center justify-center ${skipLanding ? "border-primary" : "border-foreground/20"}`}>
+                {skipLanding && <span className="h-2 w-2 rounded-full bg-primary block" />}
+              </span>
+              <span>
+                <span className="block text-sm font-medium text-foreground">Directo al VSL</span>
+                <span className="block text-xs text-muted mt-0.5">La landing redirige automaticamente al VSL. No se capturan datos de los visitantes.</span>
+              </span>
+            </button>
+          </div>
+
+          {skipLandingStatus === "saved" && (
+            <p className="mt-3 text-sm text-green-600 font-medium">
+              {skipLanding ? "Ahora los visitantes van directamente al VSL." : "La landing de captacion esta activa de nuevo."}
+            </p>
+          )}
+          {skipLandingStatus === "error" && (
+            <p className="mt-3 text-sm text-red-600 font-medium">Error al guardar. Intenta de nuevo.</p>
+          )}
         </div>
       </div>
 
