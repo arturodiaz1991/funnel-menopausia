@@ -10,6 +10,7 @@ export default function AdminDashboard() {
   const { password } = useAdmin();
   const [stats, setStats] = useState<FunnelStats | null>(null);
   const [heatmap, setHeatmap] = useState<HeatmapDataPoint[]>([]);
+  const [ctaTimestamp, setCtaTimestamp] = useState(parseInt(process.env.NEXT_PUBLIC_CTA_TIMESTAMP_SECONDS || "30", 10));
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -17,13 +18,18 @@ export default function AdminDashboard() {
 
     async function fetchData() {
       try {
-        const [statsRes, heatmapRes] = await Promise.all([
+        const [statsRes, heatmapRes, configRes] = await Promise.all([
           fetch("/api/admin/stats", { headers: { "x-admin-password": password } }),
           fetch("/api/admin/heatmap", { headers: { "x-admin-password": password } }),
+          fetch("/api/admin/config", { headers: { "x-admin-password": password } }),
         ]);
 
         if (statsRes.ok) setStats(await statsRes.json());
         if (heatmapRes.ok) setHeatmap(await heatmapRes.json());
+        if (configRes.ok) {
+          const cfg = await configRes.json();
+          if (cfg.cta_timestamp_seconds) setCtaTimestamp(parseInt(cfg.cta_timestamp_seconds, 10));
+        }
       } catch (error) {
         console.error("Error fetching admin data:", error);
       } finally {
@@ -69,7 +75,7 @@ export default function AdminDashboard() {
         </div>
       )}
 
-      <HeatmapChart data={heatmap} />
+      <HeatmapChart data={heatmap} ctaTimestamp={ctaTimestamp} />
     </div>
   );
 }

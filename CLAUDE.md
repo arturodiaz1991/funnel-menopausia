@@ -1,5 +1,8 @@
 # Funnel Menopausia
 
+## Instruccion para Claude
+Cada vez que implementes una nueva funcionalidad, modifiques la estructura del proyecto, añadas claves a app_config, cambies el comportamiento de algun componente o ruta, o realices cualquier cambio relevante: actualiza este CLAUDE.md automaticamente sin esperar a que el usuario lo pida. Mantener este archivo al dia es parte de cada tarea.
+
 ## Descripcion del Proyecto
 Funnel de ventas para producto de bienestar en menopausia. Trafico desde Meta Ads.
 Flujo: Landing captacion (nombre + email) -> VSL con reproductor restringido -> CTA hacia Comunidad de School.
@@ -27,10 +30,10 @@ Incluye dashboard de analiticas por lead y emails automaticos de abandono.
 - `src/app/politica-cookies/page.tsx` — Politica de cookies (estatica, robots: noindex)
 - `src/app/admin/` — Dashboard de admin (acceso en /admin, contrasena en ADMIN_PASSWORD)
 - `src/app/admin/leads/page.tsx` — Lista de leads + boton exportar
-- `src/app/admin/settings/page.tsx` — Configuracion: video URL, Facebook Pixel ID, School URL, Politica Privacidad (URL + texto enlace), cron manual
+- `src/app/admin/settings/page.tsx` — Configuracion: video URL, Facebook Pixel ID, School URL, Politica Privacidad, banner de cookies, email de contacto, flujo del funnel (skip landing), CTA timestamp (segundos), timeout de abandono (minutos), reset consentimiento cookies, cron manual
 - `src/app/api/` — API routes
 - `src/app/api/admin/export/route.ts` — GET: exportar leads a CSV con filtros
-- `src/app/api/config/public/route.ts` — GET publico (sin auth): devuelve privacy_url y privacy_link_text
+- `src/app/api/config/public/route.ts` — GET publico (sin auth): devuelve privacy_url, privacy_link_text, cookie_banner_enabled, contact_email
 - `src/app/api/track/pageview/route.ts` — POST anonimo: registra visita a landing en page_views
 - `src/components/video-player.tsx` — Reproductor restringido (NO adelantar)
 - `src/components/facebook-pixel.tsx` — Pixel de Facebook: solo carga si cookie_consent=true en localStorage
@@ -60,7 +63,11 @@ Incluye dashboard de analiticas por lead y emails automaticos de abandono.
 - **School URL (CTA)**: Configurable desde /admin/settings (key school_url en app_config)
 - **Politica de Privacidad**: URL y texto del enlace configurables desde /admin/settings (keys privacy_url, privacy_link_text en app_config)
 - **Cookie banner**: Aparece en primera visita, "Aceptar todas" / "Solo necesarias"; consent guardado en localStorage; Facebook Pixel solo carga si consented
-- **Pagina de cookies**: `/politica-cookies` con tabla detallada de cookies, base legal, instrucciones de gestion por navegador
+- **Pagina de cookies**: `/politica-cookies` con tabla detallada de cookies, base legal, instrucciones de gestion por navegador; email de contacto configurable desde admin
+- **Cookie banner oculto en admin**: el banner no aparece en rutas /admin/* (el titular no necesita consentimiento)
+- **Banner de cookies configurable**: activar/desactivar desde /admin/settings (key cookie_banner_enabled)
+- **Email de contacto configurable**: editable desde /admin/settings (key contact_email); se muestra en /politica-cookies
+- **Skip landing**: toggle en /admin/settings para redirigir directamente a /vsl sin mostrar la landing de captacion (key skip_landing)
 
 ## Configuracion en BD (app_config)
 Claves editables desde /admin/settings:
@@ -69,6 +76,11 @@ Claves editables desde /admin/settings:
 - `school_url` — URL del CTA (comunidad School)
 - `privacy_url` — URL de la politica de privacidad
 - `privacy_link_text` — Texto visible del enlace de privacidad en el checkbox
+- `cookie_banner_enabled` — "false" para desactivar el banner de cookies (por defecto activo)
+- `contact_email` — Email de contacto mostrado en /politica-cookies (por defecto: info@natucoach.com)
+- `skip_landing` — "true" para redirigir directamente a /vsl sin pasar por la landing
+- `cta_timestamp_seconds` — Segundo del video donde aparece el CTA (fallback: env var CTA_TIMESTAMP_SECONDS)
+- `abandonment_timeout_minutes` — Minutos de inactividad para considerar sesion abandonada (fallback: 30)
 
 ## Convenciones
 - Tiempos en BD: Unix timestamps (segundos)

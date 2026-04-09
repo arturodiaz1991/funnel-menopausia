@@ -6,9 +6,14 @@ import { useAdmin } from "../layout";
 export default function SettingsPage() {
   const { password } = useAdmin();
 
-  const [ctaTimestamp] = useState(
-    process.env.NEXT_PUBLIC_CTA_TIMESTAMP_SECONDS || "30"
-  );
+  const [ctaTimestamp, setCtaTimestamp] = useState(process.env.NEXT_PUBLIC_CTA_TIMESTAMP_SECONDS || "1500");
+  const [ctaSaving, setCtaSaving] = useState(false);
+  const [ctaStatus, setCtaStatus] = useState<"idle" | "saved" | "error">("idle");
+
+  const [abandonmentTimeout, setAbandonmentTimeout] = useState("30");
+  const [abandonmentSaving, setAbandonmentSaving] = useState(false);
+  const [abandonmentStatus, setAbandonmentStatus] = useState<"idle" | "saved" | "error">("idle");
+
   const [videoUrl, setVideoUrl] = useState("");
   const [videoSaving, setVideoSaving] = useState(false);
   const [videoStatus, setVideoStatus] = useState<"idle" | "saved" | "error">("idle");
@@ -53,9 +58,45 @@ export default function SettingsPage() {
         setCookieBannerEnabled(data.cookie_banner_enabled !== "false");
         if (data.contact_email) setContactEmail(data.contact_email);
         setSkipLanding(data.skip_landing === "true");
+        if (data.cta_timestamp_seconds) setCtaTimestamp(data.cta_timestamp_seconds);
+        if (data.abandonment_timeout_minutes) setAbandonmentTimeout(data.abandonment_timeout_minutes);
       })
       .catch(() => {});
   }, [password]);
+
+  async function saveConfig(key: string, value: string) {
+    return fetch("/api/admin/config", {
+      method: "PUT",
+      headers: { "x-admin-password": password, "Content-Type": "application/json" },
+      body: JSON.stringify({ key, value }),
+    });
+  }
+
+  async function handleSaveCtaTimestamp() {
+    setCtaSaving(true);
+    setCtaStatus("idle");
+    try {
+      const res = await saveConfig("cta_timestamp_seconds", ctaTimestamp);
+      setCtaStatus(res.ok ? "saved" : "error");
+    } catch {
+      setCtaStatus("error");
+    } finally {
+      setCtaSaving(false);
+    }
+  }
+
+  async function handleSaveAbandonmentTimeout() {
+    setAbandonmentSaving(true);
+    setAbandonmentStatus("idle");
+    try {
+      const res = await saveConfig("abandonment_timeout_minutes", abandonmentTimeout);
+      setAbandonmentStatus(res.ok ? "saved" : "error");
+    } catch {
+      setAbandonmentStatus("error");
+    } finally {
+      setAbandonmentSaving(false);
+    }
+  }
 
   async function handleSaveVideoUrl() {
     if (!videoUrl.trim()) return;
@@ -225,11 +266,19 @@ export default function SettingsPage() {
           <div className="flex items-center gap-3 mt-2">
             <button
               onClick={handleSaveVideoUrl}
-              disabled={videoSaving || !videoUrl.trim()}
+              disabled={videoSaving}
               className="rounded-xl bg-primary px-5 py-2 text-sm font-medium text-white hover:bg-primary/90 transition-colors disabled:opacity-50"
             >
               {videoSaving ? "Guardando..." : "Guardar URL"}
             </button>
+            {videoUrl && (
+              <button
+                onClick={async () => { setVideoUrl(""); const res = await saveConfig("video_url", ""); setVideoStatus(res.ok ? "saved" : "error"); }}
+                className="rounded-xl border border-foreground/10 px-4 py-2 text-sm font-medium text-muted hover:bg-foreground/5 transition-colors"
+              >
+                Eliminar
+              </button>
+            )}
             {videoStatus === "saved" && (
               <span className="text-sm text-green-600 font-medium">Guardado. El VSL ya usa este video.</span>
             )}
@@ -340,6 +389,14 @@ export default function SettingsPage() {
             >
               {privacySaving ? "Guardando..." : "Guardar"}
             </button>
+            {(privacyUrl || privacyLinkText) && (
+              <button
+                onClick={async () => { setPrivacyUrl(""); setPrivacyLinkText(""); await Promise.all([saveConfig("privacy_url", ""), saveConfig("privacy_link_text", "")]); setPrivacyStatus("saved"); }}
+                className="rounded-xl border border-foreground/10 px-4 py-2 text-sm font-medium text-muted hover:bg-foreground/5 transition-colors"
+              >
+                Eliminar
+              </button>
+            )}
             {privacyStatus === "saved" && (
               <span className="text-sm text-green-600 font-medium">Guardado correctamente.</span>
             )}
@@ -406,6 +463,18 @@ export default function SettingsPage() {
               <strong>Nota legal:</strong> Desactivar el banner no exime del cumplimiento del RGPD y la LSSI-CE. Solo hazlo si tienes otra solucion de consentimiento en vigor.
             </p>
           </div>
+
+          <div className="mt-4 pt-4 border-t border-foreground/5">
+            <p className="text-xs text-muted mb-2">
+              <strong>Probar el banner:</strong> El banner no se muestra si ya aceptaste o rechazaste las cookies en este navegador. Pulsa este boton para resetear tu eleccion y volver a verlo.
+            </p>
+            <button
+              onClick={() => { localStorage.removeItem("cookie_consent"); alert("Consentimiento reseteado. Recarga la pagina para ver el banner."); }}
+              className="rounded-xl border border-foreground/10 px-4 py-2 text-sm font-medium text-muted hover:bg-foreground/5 transition-colors"
+            >
+              Resetear consentimiento de cookies
+            </button>
+          </div>
         </div>
       </div>
 
@@ -426,11 +495,19 @@ export default function SettingsPage() {
           <div className="flex items-center gap-3 mt-2">
             <button
               onClick={handleSaveContactEmail}
-              disabled={contactEmailSaving || !contactEmail.trim()}
+              disabled={contactEmailSaving}
               className="rounded-xl bg-primary px-5 py-2 text-sm font-medium text-white hover:bg-primary/90 transition-colors disabled:opacity-50"
             >
               {contactEmailSaving ? "Guardando..." : "Guardar email"}
             </button>
+            {contactEmail && (
+              <button
+                onClick={async () => { setContactEmail(""); const res = await saveConfig("contact_email", ""); setContactEmailStatus(res.ok ? "saved" : "error"); }}
+                className="rounded-xl border border-foreground/10 px-4 py-2 text-sm font-medium text-muted hover:bg-foreground/5 transition-colors"
+              >
+                Eliminar
+              </button>
+            )}
             {contactEmailStatus === "saved" && (
               <span className="text-sm text-green-600 font-medium">Guardado correctamente.</span>
             )}
@@ -498,28 +575,74 @@ export default function SettingsPage() {
         </div>
       </div>
 
-      {/* Otras configuraciones (solo lectura) */}
-      <div className="rounded-2xl border border-foreground/5 bg-white p-6 max-w-lg space-y-6">
+      {/* CTA Timestamp */}
+      <div className="rounded-2xl border border-foreground/5 bg-white p-6 max-w-lg space-y-4">
         <div>
-          <label className="block text-sm font-medium text-foreground/80 mb-1.5">
-            Minuto de aparicion del CTA (segundos)
-          </label>
+          <h2 className="text-base font-semibold mb-1">Minuto de aparicion del CTA (segundos)</h2>
+          <p className="text-xs text-muted mb-3">
+            Segundo del video en el que aparece el boton de CTA. Por ejemplo: 1500 = minuto 25.
+          </p>
           <input
             type="number"
             value={ctaTimestamp}
-            disabled
-            className="w-full rounded-xl border border-foreground/10 bg-gray-50 px-4 py-3 text-base text-muted"
+            onChange={(e) => { setCtaTimestamp(e.target.value); setCtaStatus("idle"); }}
+            min="0"
+            className="w-full rounded-xl border border-foreground/10 bg-white px-4 py-3 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
           />
-          <p className="mt-1 text-xs text-muted">
-            Equivale a {Math.floor(parseInt(ctaTimestamp) / 60)}m {parseInt(ctaTimestamp) % 60}s del video.
-            Cambiar este valor requiere actualizar la variable de entorno CTA_TIMESTAMP_SECONDS en Vercel.
-          </p>
+          {ctaTimestamp && (
+            <p className="mt-1 text-xs text-muted">
+              Equivale a {Math.floor(parseInt(ctaTimestamp) / 60)}m {parseInt(ctaTimestamp) % 60}s del video.
+            </p>
+          )}
+          <div className="flex items-center gap-3 mt-2">
+            <button
+              onClick={handleSaveCtaTimestamp}
+              disabled={ctaSaving || !ctaTimestamp}
+              className="rounded-xl bg-primary px-5 py-2 text-sm font-medium text-white hover:bg-primary/90 transition-colors disabled:opacity-50"
+            >
+              {ctaSaving ? "Guardando..." : "Guardar"}
+            </button>
+            {ctaStatus === "saved" && <span className="text-sm text-green-600 font-medium">Guardado correctamente.</span>}
+            {ctaStatus === "error" && <span className="text-sm text-red-600 font-medium">Error al guardar.</span>}
+          </div>
         </div>
+      </div>
 
+      {/* Timeout de abandono */}
+      <div className="rounded-2xl border border-foreground/5 bg-white p-6 max-w-lg space-y-4">
         <div>
-          <label className="block text-sm font-medium text-foreground/80 mb-1.5">
-            URL del CTA (Comunidad de School)
-          </label>
+          <h2 className="text-base font-semibold mb-1">Timeout de abandono (minutos)</h2>
+          <p className="text-xs text-muted mb-3">
+            Minutos de inactividad tras los cuales una sesion se considera abandonada y se envia el email de seguimiento.
+          </p>
+          <input
+            type="number"
+            value={abandonmentTimeout}
+            onChange={(e) => { setAbandonmentTimeout(e.target.value); setAbandonmentStatus("idle"); }}
+            min="1"
+            className="w-full rounded-xl border border-foreground/10 bg-white px-4 py-3 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
+          />
+          <div className="flex items-center gap-3 mt-2">
+            <button
+              onClick={handleSaveAbandonmentTimeout}
+              disabled={abandonmentSaving || !abandonmentTimeout}
+              className="rounded-xl bg-primary px-5 py-2 text-sm font-medium text-white hover:bg-primary/90 transition-colors disabled:opacity-50"
+            >
+              {abandonmentSaving ? "Guardando..." : "Guardar"}
+            </button>
+            {abandonmentStatus === "saved" && <span className="text-sm text-green-600 font-medium">Guardado correctamente.</span>}
+            {abandonmentStatus === "error" && <span className="text-sm text-red-600 font-medium">Error al guardar.</span>}
+          </div>
+        </div>
+      </div>
+
+      {/* URL del CTA */}
+      <div className="rounded-2xl border border-foreground/5 bg-white p-6 max-w-lg space-y-4">
+        <div>
+          <h2 className="text-base font-semibold mb-1">URL del CTA (Comunidad de School)</h2>
+          <p className="text-xs text-muted mb-3">
+            Enlace al que se dirige el boton CTA cuando el usuario hace clic.
+          </p>
           <input
             type="url"
             value={schoolUrl}
@@ -530,33 +653,28 @@ export default function SettingsPage() {
           <div className="flex items-center gap-3 mt-2">
             <button
               onClick={handleSaveSchoolUrl}
-              disabled={schoolSaving || !schoolUrl.trim()}
+              disabled={schoolSaving}
               className="rounded-xl bg-primary px-5 py-2 text-sm font-medium text-white hover:bg-primary/90 transition-colors disabled:opacity-50"
             >
               {schoolSaving ? "Guardando..." : "Guardar URL"}
             </button>
-            {schoolStatus === "saved" && (
-              <span className="text-sm text-green-600 font-medium">Guardado. El CTA ya apunta a esta URL.</span>
+            {schoolUrl && (
+              <button
+                onClick={async () => { setSchoolUrl(""); const res = await saveConfig("school_url", ""); setSchoolStatus(res.ok ? "saved" : "error"); }}
+                className="rounded-xl border border-foreground/10 px-4 py-2 text-sm font-medium text-muted hover:bg-foreground/5 transition-colors"
+              >
+                Eliminar
+              </button>
             )}
-            {schoolStatus === "error" && (
-              <span className="text-sm text-red-600 font-medium">Error al guardar. Intenta de nuevo.</span>
-            )}
+            {schoolStatus === "saved" && <span className="text-sm text-green-600 font-medium">Guardado.</span>}
+            {schoolStatus === "error" && <span className="text-sm text-red-600 font-medium">Error al guardar.</span>}
           </div>
         </div>
+      </div>
 
-        <div>
-          <label className="block text-sm font-medium text-foreground/80 mb-1.5">
-            Timeout de abandono (minutos)
-          </label>
-          <input
-            type="number"
-            value="30"
-            disabled
-            className="w-full rounded-xl border border-foreground/10 bg-gray-50 px-4 py-3 text-base text-muted"
-          />
-        </div>
-
-        <div className="pt-4 border-t border-foreground/5">
+      {/* Zona peligrosa + Cron */}
+      <div className="rounded-2xl border border-foreground/5 bg-white p-6 max-w-lg space-y-6">
+        <div className="pt-0 border-t-0">
           <h3 className="text-sm font-semibold mb-2 text-red-600">Zona peligrosa</h3>
           <p className="text-xs text-muted mb-3">
             Elimina todos los leads, sesiones, eventos y emails de la base de datos. Irreversible.

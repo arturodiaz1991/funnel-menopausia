@@ -6,16 +6,15 @@ import CtaButton from "@/components/cta-button";
 import { useVideoTracker } from "@/hooks/use-video-tracker";
 import { useCtaVisibility } from "@/hooks/use-cta-visibility";
 
-const CTA_TIMESTAMP = parseInt(process.env.NEXT_PUBLIC_CTA_TIMESTAMP_SECONDS || "30", 10);
-
 interface VSLClientProps {
   videoUrl: string;
   schoolUrl: string;
+  ctaTimestamp: number;
 }
 
-export default function VSLClient({ videoUrl, schoolUrl }: VSLClientProps) {
+export default function VSLClient({ videoUrl, schoolUrl, ctaTimestamp }: VSLClientProps) {
   const { trackEvent } = useVideoTracker();
-  const { isVisible, checkVisibility } = useCtaVisibility(CTA_TIMESTAMP);
+  const { isVisible, checkVisibility } = useCtaVisibility(ctaTimestamp);
 
   const handleTimeUpdate = useCallback((currentTime: number) => {
     trackEvent({ type: "timeupdate", timestampSec: currentTime });
@@ -44,13 +43,13 @@ export default function VSLClient({ videoUrl, schoolUrl }: VSLClientProps) {
 
   useEffect(() => {
     if (isVisible) {
-      trackEvent({ type: "cta_shown", timestampSec: CTA_TIMESTAMP });
+      trackEvent({ type: "cta_shown", timestampSec: ctaTimestamp });
     }
-  }, [isVisible, trackEvent]);
+  }, [isVisible, trackEvent, ctaTimestamp]);
 
   const handleCtaClick = useCallback(() => {
-    trackEvent({ type: "cta_clicked", timestampSec: CTA_TIMESTAMP });
-  }, [trackEvent]);
+    trackEvent({ type: "cta_clicked", timestampSec: ctaTimestamp });
+  }, [trackEvent, ctaTimestamp]);
 
   return (
     <main className="flex flex-1 flex-col items-center justify-center px-4 py-12">

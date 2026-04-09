@@ -3,6 +3,7 @@ import { db } from "@/db";
 import { leadSessions, leads, emailLog } from "@/db/schema";
 import { eq, lt, and } from "drizzle-orm";
 import { config } from "@/lib/config";
+import { getAppConfig } from "@/db/queries";
 import { sendEmail } from "@/lib/email";
 import { emailTemplates, getAbandonmentTemplate } from "@/lib/email-templates";
 
@@ -14,7 +15,9 @@ async function runCron(request: NextRequest) {
   }
 
   try {
-    const timeoutMs = config.abandonmentTimeoutMinutes * 60 * 1000;
+    const dbTimeout = await getAppConfig("abandonment_timeout_minutes").catch(() => null);
+    const timeoutMinutes = dbTimeout ? parseInt(dbTimeout, 10) || config.abandonmentTimeoutMinutes : config.abandonmentTimeoutMinutes;
+    const timeoutMs = timeoutMinutes * 60 * 1000;
     const cutoff = new Date(Date.now() - timeoutMs);
 
     // Find abandoned sessions: inactive for > 30 min, not converted
@@ -44,9 +47,11 @@ async function runCron(request: NextRequest) {
 
     for (const session of abandonedSessions) {
       const abandonedAt = session.abandonedAtSec ?? session.maxTimestampSec;
+      const dbCta = await getAppConfig("cta_timestamp_seconds").catch(() => null);
+      const ctaTimestamp = dbCta ? parseInt(dbCta, 10) || config.ctaTimestampSeconds : config.ctaTimestampSeconds;
       const templateKey = getAbandonmentTemplate(
         abandonedAt,
-        config.ctaTimestampSeconds,
+        ctaTimestamp,
         session.ctaShown,
         session.ctaClicked
       );

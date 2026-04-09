@@ -15,8 +15,7 @@ interface DropZone {
   label: string;
 }
 
-export default function HeatmapChart({ data }: { data: HeatmapDataPoint[] }) {
-  const ctaTimestamp = parseInt(process.env.NEXT_PUBLIC_CTA_TIMESTAMP_SECONDS || "30", 10);
+export default function HeatmapChart({ data, ctaTimestamp = parseInt(process.env.NEXT_PUBLIC_CTA_TIMESTAMP_SECONDS || "30", 10) }: { data: HeatmapDataPoint[]; ctaTimestamp?: number }) {
 
   const metrics = useMemo(() => {
     if (data.length < 2) return null;
