@@ -325,10 +325,10 @@ export default function SettingsPage() {
             </button>
             {pixelId && (
               <button
-                onClick={() => { setPixelId(""); setPixelStatus("idle"); }}
+                onClick={async () => { setPixelId(""); const res = await saveConfig("fb_pixel_id", ""); setPixelStatus(res.ok ? "saved" : "error"); }}
                 className="rounded-xl border border-foreground/10 px-4 py-2 text-sm font-medium text-muted hover:bg-foreground/5 transition-colors"
               >
-                Limpiar
+                Eliminar
               </button>
             )}
             {pixelStatus === "saved" && (
