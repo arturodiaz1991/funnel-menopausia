@@ -271,14 +271,13 @@ export default function SettingsPage() {
             >
               {videoSaving ? "Guardando..." : "Guardar URL"}
             </button>
-            {videoUrl && (
-              <button
-                onClick={async () => { setVideoUrl(""); const res = await saveConfig("video_url", ""); setVideoStatus(res.ok ? "saved" : "error"); }}
-                className="rounded-xl border border-foreground/10 px-4 py-2 text-sm font-medium text-muted hover:bg-foreground/5 transition-colors"
-              >
-                Eliminar
-              </button>
-            )}
+            <button
+              onClick={async () => { setVideoUrl(""); const res = await saveConfig("video_url", ""); setVideoStatus(res.ok ? "saved" : "error"); }}
+              disabled={videoSaving}
+              className="rounded-xl border border-foreground/10 px-4 py-2 text-sm font-medium text-muted hover:bg-foreground/5 transition-colors disabled:opacity-50"
+            >
+              Eliminar
+            </button>
             {videoStatus === "saved" && (
               <span className="text-sm text-green-600 font-medium">Guardado. El VSL ya usa este video.</span>
             )}
@@ -323,14 +322,13 @@ export default function SettingsPage() {
             >
               {pixelSaving ? "Guardando..." : "Guardar Pixel"}
             </button>
-            {pixelId && (
-              <button
-                onClick={async () => { setPixelId(""); const res = await saveConfig("fb_pixel_id", ""); setPixelStatus(res.ok ? "saved" : "error"); }}
-                className="rounded-xl border border-foreground/10 px-4 py-2 text-sm font-medium text-muted hover:bg-foreground/5 transition-colors"
-              >
-                Eliminar
-              </button>
-            )}
+            <button
+              onClick={async () => { setPixelId(""); const res = await saveConfig("fb_pixel_id", ""); setPixelStatus(res.ok ? "saved" : "error"); }}
+              disabled={pixelSaving}
+              className="rounded-xl border border-foreground/10 px-4 py-2 text-sm font-medium text-muted hover:bg-foreground/5 transition-colors disabled:opacity-50"
+            >
+              Eliminar
+            </button>
             {pixelStatus === "saved" && (
               <span className="text-sm text-green-600 font-medium">
                 {pixelId ? "Pixel activado correctamente." : "Pixel desactivado."}
@@ -389,14 +387,13 @@ export default function SettingsPage() {
             >
               {privacySaving ? "Guardando..." : "Guardar"}
             </button>
-            {(privacyUrl || privacyLinkText) && (
-              <button
-                onClick={async () => { setPrivacyUrl(""); setPrivacyLinkText(""); await Promise.all([saveConfig("privacy_url", ""), saveConfig("privacy_link_text", "")]); setPrivacyStatus("saved"); }}
-                className="rounded-xl border border-foreground/10 px-4 py-2 text-sm font-medium text-muted hover:bg-foreground/5 transition-colors"
-              >
-                Eliminar
-              </button>
-            )}
+            <button
+              onClick={async () => { setPrivacyUrl(""); setPrivacyLinkText(""); await Promise.all([saveConfig("privacy_url", ""), saveConfig("privacy_link_text", "")]); setPrivacyStatus("saved"); }}
+              disabled={privacySaving}
+              className="rounded-xl border border-foreground/10 px-4 py-2 text-sm font-medium text-muted hover:bg-foreground/5 transition-colors disabled:opacity-50"
+            >
+              Eliminar
+            </button>
             {privacyStatus === "saved" && (
               <span className="text-sm text-green-600 font-medium">Guardado correctamente.</span>
             )}
@@ -500,14 +497,13 @@ export default function SettingsPage() {
             >
               {contactEmailSaving ? "Guardando..." : "Guardar email"}
             </button>
-            {contactEmail && (
-              <button
-                onClick={async () => { setContactEmail(""); const res = await saveConfig("contact_email", ""); setContactEmailStatus(res.ok ? "saved" : "error"); }}
-                className="rounded-xl border border-foreground/10 px-4 py-2 text-sm font-medium text-muted hover:bg-foreground/5 transition-colors"
-              >
-                Eliminar
-              </button>
-            )}
+            <button
+              onClick={async () => { setContactEmail(""); const res = await saveConfig("contact_email", ""); setContactEmailStatus(res.ok ? "saved" : "error"); }}
+              disabled={contactEmailSaving}
+              className="rounded-xl border border-foreground/10 px-4 py-2 text-sm font-medium text-muted hover:bg-foreground/5 transition-colors disabled:opacity-50"
+            >
+              Eliminar
+            </button>
             {contactEmailStatus === "saved" && (
               <span className="text-sm text-green-600 font-medium">Guardado correctamente.</span>
             )}
@@ -658,14 +654,13 @@ export default function SettingsPage() {
             >
               {schoolSaving ? "Guardando..." : "Guardar URL"}
             </button>
-            {schoolUrl && (
-              <button
-                onClick={async () => { setSchoolUrl(""); const res = await saveConfig("school_url", ""); setSchoolStatus(res.ok ? "saved" : "error"); }}
-                className="rounded-xl border border-foreground/10 px-4 py-2 text-sm font-medium text-muted hover:bg-foreground/5 transition-colors"
-              >
-                Eliminar
-              </button>
-            )}
+            <button
+              onClick={async () => { setSchoolUrl(""); const res = await saveConfig("school_url", ""); setSchoolStatus(res.ok ? "saved" : "error"); }}
+              disabled={schoolSaving}
+              className="rounded-xl border border-foreground/10 px-4 py-2 text-sm font-medium text-muted hover:bg-foreground/5 transition-colors disabled:opacity-50"
+            >
+              Eliminar
+            </button>
             {schoolStatus === "saved" && <span className="text-sm text-green-600 font-medium">Guardado.</span>}
             {schoolStatus === "error" && <span className="text-sm text-red-600 font-medium">Error al guardar.</span>}
           </div>
