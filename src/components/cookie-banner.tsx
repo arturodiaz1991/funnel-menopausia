@@ -8,7 +8,19 @@ export default function CookieBanner() {
 
   useEffect(() => {
     const consent = localStorage.getItem("cookie_consent");
-    if (consent === null) setShow(true);
+    if (consent !== null) return; // Ya decidido — no mostrar banner
+
+    // Comprobar si el banner está habilitado en la configuracion
+    fetch("/api/config/public")
+      .then((r) => r.json())
+      .then((data) => {
+        // Si cookie_banner_enabled es explícitamente 'false', no mostrar
+        if (data.cookie_banner_enabled === "false") return;
+        setShow(true);
+      })
+      .catch(() => {
+        setShow(true); // En caso de error, mostrar por defecto (mas seguro legalmente)
+      });
   }, []);
 
   function accept() {

@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { getAppConfig } from "@/db/queries";
 
 // Claves que se pueden exponer públicamente (sin auth)
-const PUBLIC_KEYS = ["privacy_url", "privacy_link_text"] as const;
+const PUBLIC_KEYS = ["privacy_url", "privacy_link_text", "cookie_banner_enabled", "contact_email"] as const;
 
 export async function GET() {
   try {

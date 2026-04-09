@@ -1,16 +1,21 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { getAppConfig } from "@/db/queries";
 
 export const metadata: Metadata = {
   title: "Politica de Cookies",
   robots: { index: false },
 };
 
-export default function PoliticaCookiesPage() {
-  const siteName = "Clase Gratuita: Reduce el Insomnio en la Menopausia";
+export default async function PoliticaCookiesPage() {
   const siteUrl = process.env.NEXT_PUBLIC_BASE_URL || "https://funnel-menopausia-app.vercel.app";
-  const contactEmail = "info@tudominio.com";
   const lastUpdated = "9 de abril de 2026";
+
+  let contactEmail = "info@natucoach.com";
+  try {
+    const dbEmail = await getAppConfig("contact_email");
+    if (dbEmail) contactEmail = dbEmail;
+  } catch {}
 
   return (
     <main className="min-h-screen bg-background px-4 py-12">

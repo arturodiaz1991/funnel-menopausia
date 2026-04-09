@@ -26,6 +26,14 @@ export default function SettingsPage() {
   const [privacySaving, setPrivacySaving] = useState(false);
   const [privacyStatus, setPrivacyStatus] = useState<"idle" | "saved" | "error">("idle");
 
+  const [cookieBannerEnabled, setCookieBannerEnabled] = useState(true);
+  const [cookieBannerSaving, setCookieBannerSaving] = useState(false);
+  const [cookieBannerStatus, setCookieBannerStatus] = useState<"idle" | "saved" | "error">("idle");
+
+  const [contactEmail, setContactEmail] = useState("info@natucoach.com");
+  const [contactEmailSaving, setContactEmailSaving] = useState(false);
+  const [contactEmailStatus, setContactEmailStatus] = useState<"idle" | "saved" | "error">("idle");
+
   useEffect(() => {
     if (!password) return;
     fetch("/api/admin/config", {
@@ -38,6 +46,8 @@ export default function SettingsPage() {
         if (data.school_url) setSchoolUrl(data.school_url);
         if (data.privacy_url) setPrivacyUrl(data.privacy_url);
         if (data.privacy_link_text) setPrivacyLinkText(data.privacy_link_text);
+        setCookieBannerEnabled(data.cookie_banner_enabled !== "false");
+        if (data.contact_email) setContactEmail(data.contact_email);
       })
       .catch(() => {});
   }, [password]);
@@ -84,6 +94,45 @@ export default function SettingsPage() {
       setPrivacyStatus("error");
     } finally {
       setPrivacySaving(false);
+    }
+  }
+
+  async function handleSaveCookieBanner(enabled: boolean) {
+    setCookieBannerSaving(true);
+    setCookieBannerStatus("idle");
+    try {
+      const res = await fetch("/api/admin/config", {
+        method: "PUT",
+        headers: { "x-admin-password": password, "Content-Type": "application/json" },
+        body: JSON.stringify({ key: "cookie_banner_enabled", value: enabled ? "true" : "false" }),
+      });
+      if (res.ok) {
+        setCookieBannerEnabled(enabled);
+        setCookieBannerStatus("saved");
+      } else {
+        setCookieBannerStatus("error");
+      }
+    } catch {
+      setCookieBannerStatus("error");
+    } finally {
+      setCookieBannerSaving(false);
+    }
+  }
+
+  async function handleSaveContactEmail() {
+    setContactEmailSaving(true);
+    setContactEmailStatus("idle");
+    try {
+      const res = await fetch("/api/admin/config", {
+        method: "PUT",
+        headers: { "x-admin-password": password, "Content-Type": "application/json" },
+        body: JSON.stringify({ key: "contact_email", value: contactEmail }),
+      });
+      setContactEmailStatus(res.ok ? "saved" : "error");
+    } catch {
+      setContactEmailStatus("error");
+    } finally {
+      setContactEmailSaving(false);
     }
   }
 
@@ -279,6 +328,88 @@ export default function SettingsPage() {
               <span className="text-primary underline">{privacyLinkText || "Politica de Privacidad"}</span>
               {" "}y consiento el tratamiento de mis datos personales con la finalidad de recibir comunicaciones comerciales sobre los servicios ofrecidos, de conformidad con el Reglamento (UE) 2016/679 (RGPD) y la normativa nacional aplicable.
             </p>
+          </div>
+        </div>
+      </div>
+
+      {/* Banner de Cookies */}
+      <div className="rounded-2xl border border-foreground/5 bg-white p-6 max-w-lg space-y-4">
+        <div>
+          <h2 className="text-base font-semibold mb-1">Banner de Cookies</h2>
+          <p className="text-xs text-muted mb-4">
+            Activa o desactiva el banner de consentimiento de cookies que aparece en la primera visita. Si lo desactivas, el banner no aparecera y el Pixel de Facebook no se cargara para nuevos visitantes (a menos que ya hayan aceptado previamente).
+          </p>
+
+          <div className="flex items-center gap-4">
+            <button
+              onClick={() => handleSaveCookieBanner(true)}
+              disabled={cookieBannerSaving || cookieBannerEnabled}
+              className={`rounded-xl px-5 py-2 text-sm font-medium transition-colors disabled:cursor-not-allowed ${
+                cookieBannerEnabled
+                  ? "bg-green-600 text-white opacity-100 cursor-default"
+                  : "border border-foreground/15 text-foreground/70 hover:bg-foreground/5 disabled:opacity-50"
+              }`}
+            >
+              Activado
+            </button>
+            <button
+              onClick={() => handleSaveCookieBanner(false)}
+              disabled={cookieBannerSaving || !cookieBannerEnabled}
+              className={`rounded-xl px-5 py-2 text-sm font-medium transition-colors disabled:cursor-not-allowed ${
+                !cookieBannerEnabled
+                  ? "bg-red-500 text-white opacity-100 cursor-default"
+                  : "border border-foreground/15 text-foreground/70 hover:bg-foreground/5 disabled:opacity-50"
+              }`}
+            >
+              Desactivado
+            </button>
+          </div>
+
+          {cookieBannerStatus === "saved" && (
+            <p className="mt-2 text-sm text-green-600 font-medium">
+              {cookieBannerEnabled ? "Banner activado correctamente." : "Banner desactivado. El Pixel no cargara para nuevos visitantes."}
+            </p>
+          )}
+          {cookieBannerStatus === "error" && (
+            <p className="mt-2 text-sm text-red-600 font-medium">Error al guardar. Intenta de nuevo.</p>
+          )}
+
+          <div className="mt-4 p-3 rounded-xl bg-amber-50 border border-amber-200">
+            <p className="text-xs text-amber-700">
+              <strong>Nota legal:</strong> Desactivar el banner no exime del cumplimiento del RGPD y la LSSI-CE. Solo hazlo si tienes otra solucion de consentimiento en vigor.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* Email de contacto */}
+      <div className="rounded-2xl border border-foreground/5 bg-white p-6 max-w-lg space-y-4">
+        <div>
+          <h2 className="text-base font-semibold mb-1">Email de contacto</h2>
+          <p className="text-xs text-muted mb-3">
+            Direccion de email que aparece en la Politica de Cookies como punto de contacto para consultas legales.
+          </p>
+          <input
+            type="email"
+            value={contactEmail}
+            onChange={(e) => { setContactEmail(e.target.value); setContactEmailStatus("idle"); }}
+            placeholder="info@tudominio.com"
+            className="w-full rounded-xl border border-foreground/10 bg-white px-4 py-3 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
+          />
+          <div className="flex items-center gap-3 mt-2">
+            <button
+              onClick={handleSaveContactEmail}
+              disabled={contactEmailSaving || !contactEmail.trim()}
+              className="rounded-xl bg-primary px-5 py-2 text-sm font-medium text-white hover:bg-primary/90 transition-colors disabled:opacity-50"
+            >
+              {contactEmailSaving ? "Guardando..." : "Guardar email"}
+            </button>
+            {contactEmailStatus === "saved" && (
+              <span className="text-sm text-green-600 font-medium">Guardado correctamente.</span>
+            )}
+            {contactEmailStatus === "error" && (
+              <span className="text-sm text-red-600 font-medium">Error al guardar.</span>
+            )}
           </div>
         </div>
       </div>
