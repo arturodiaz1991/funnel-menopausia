@@ -2,7 +2,7 @@
 
 import Script from "next/script";
 import { usePathname, useSearchParams } from "next/navigation";
-import { useEffect, Suspense } from "react";
+import { useEffect, useState, Suspense } from "react";
 
 declare global {
   interface Window {
@@ -25,7 +25,17 @@ function FacebookPixelInner({ pixelId }: { pixelId: string }) {
 
 export default function FacebookPixel({ pixelId }: { pixelId?: string }) {
   const id = pixelId || process.env.NEXT_PUBLIC_FB_PIXEL_ID;
-  if (!id) return null;
+  const [consented, setConsented] = useState(false);
+
+  useEffect(() => {
+    setConsented(localStorage.getItem("cookie_consent") === "true");
+
+    const handler = () => setConsented(true);
+    window.addEventListener("cookie-consent-accepted", handler);
+    return () => window.removeEventListener("cookie-consent-accepted", handler);
+  }, []);
+
+  if (!id || !consented) return null;
 
   return (
     <>

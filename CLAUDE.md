@@ -22,33 +22,53 @@ Incluye dashboard de analiticas por lead y emails automaticos de abandono.
 - `npx tsx scripts/migrate-turso.ts` — Aplicar migraciones a Turso remoto (requiere TURSO_DATABASE_URL y TURSO_AUTH_TOKEN)
 
 ## Estructura Clave
-- `src/app/page.tsx` — Landing de captacion (formulario)
-- `src/app/vsl/page.tsx` — Pagina VSL (reproductor + CTA)
+- `src/app/page.tsx` — Landing de captacion (formulario + LandingTracker)
+- `src/app/vsl/page.tsx` — Pagina VSL (reproductor + CTA); lee video_url y school_url de BD
+- `src/app/politica-cookies/page.tsx` — Politica de cookies (estatica, robots: noindex)
 - `src/app/admin/` — Dashboard de admin (acceso en /admin, contrasena en ADMIN_PASSWORD)
 - `src/app/admin/leads/page.tsx` — Lista de leads + boton exportar
-- `src/app/admin/settings/page.tsx` — Configuracion (CTA, School URL, ejecutar cron)
+- `src/app/admin/settings/page.tsx` — Configuracion: video URL, Facebook Pixel ID, School URL, Politica Privacidad (URL + texto enlace), cron manual
 - `src/app/api/` — API routes
 - `src/app/api/admin/export/route.ts` — GET: exportar leads a CSV con filtros
+- `src/app/api/config/public/route.ts` — GET publico (sin auth): devuelve privacy_url y privacy_link_text
+- `src/app/api/track/pageview/route.ts` — POST anonimo: registra visita a landing en page_views
 - `src/components/video-player.tsx` — Reproductor restringido (NO adelantar)
-- `src/components/facebook-pixel.tsx` — Pixel de Facebook (se inyecta en layout global)
+- `src/components/facebook-pixel.tsx` — Pixel de Facebook: solo carga si cookie_consent=true en localStorage
+- `src/components/pixel-loader.tsx` — Server component: lee fb_pixel_id de BD y pasa a FacebookPixel
+- `src/components/cookie-banner.tsx` — Banner de consentimiento de cookies (aparece en primera visita)
+- `src/components/landing-tracker.tsx` — Client component: dispara POST /api/track/pageview al montar
+- `src/components/lead-form.tsx` — Formulario con checkbox RGPD obligatorio (muestra error si no marcado)
 - `src/components/admin/export-modal.tsx` — Modal de exportacion con filtros
-- `src/db/schema.ts` — Esquema de BD (fuente de verdad)
+- `src/db/schema.ts` — Esquema de BD (fuente de verdad): leads, video_events, lead_sessions, email_log, app_config, page_views
 - `src/db/index.ts` — Conexion DB: usa TURSO_DATABASE_URL si existe, sino DATABASE_URL (local)
-- `src/db/queries.ts` — Queries reutilizables incl. getLeadsForExport() con filtros
+- `src/db/queries.ts` — Queries reutilizables incl. getLeadsForExport(), trackPageView(), getFunnelStats() (con landingVisits)
 - `src/lib/email-templates/` — Plantillas de email (6 segmentos de abandono)
 - `src/lib/config.ts` — Config centralizada desde env vars
 - `vercel.json` — Cron de abandono configurado (1x/dia a las 8am — free tier Vercel)
 - `scripts/migrate-turso.ts` — Script de migracion para Turso
 
 ## Funcionalidades Implementadas
-- **Landing** (`/`): Formulario nombre+email, captura UTMs, email bienvenida, redirige a /vsl
-- **VSL** (`/vsl`): Reproductor restringido (no adelantar), CTA aparece en minuto configurable
+- **Landing** (`/`): Formulario nombre+email, captura UTMs, email bienvenida, redirige a /vsl; checkbox RGPD obligatorio con enlace a politica de privacidad configurable desde admin
+- **Tracking visitas landing**: LandingTracker dispara POST /api/track/pageview; tabla page_views en BD; primer paso del embudo en admin
+- **VSL** (`/vsl`): Reproductor restringido (no adelantar), CTA aparece en minuto configurable; school_url leida de BD
 - **Tracking**: Eventos de video (play, pause, seek, timeupdate) guardados en BD por lead
 - **Emails abandono**: 6 segmentos segun minuto de abandono, cron diario a las 8am
-- **Admin dashboard** (`/admin`): Stats generales, embudo de conversion, heatmap de retencion
+- **Admin dashboard** (`/admin`): Stats generales, embudo 5 pasos (landing visits -> leads -> VSL -> CTA mostrado -> CTA clickeado), heatmap de retencion
 - **Admin leads** (`/admin/leads`): Tabla de leads con tiempo visto, CTA, emails; drill-down por lead con timeline completo de eventos
 - **Exportacion CSV** (`/admin/leads` → boton "Exportar leads"): Filtros por fecha, tiempo minimo visto, etapa del funnel, emails enviados; preview de cantidad antes de exportar
-- **Facebook Pixel**: Se activa con NEXT_PUBLIC_FB_PIXEL_ID; trackea PageView en cada ruta
+- **Facebook Pixel**: Configurable desde /admin/settings (key fb_pixel_id en app_config) O via NEXT_PUBLIC_FB_PIXEL_ID; solo se carga tras aceptar cookies
+- **School URL (CTA)**: Configurable desde /admin/settings (key school_url en app_config)
+- **Politica de Privacidad**: URL y texto del enlace configurables desde /admin/settings (keys privacy_url, privacy_link_text en app_config)
+- **Cookie banner**: Aparece en primera visita, "Aceptar todas" / "Solo necesarias"; consent guardado en localStorage; Facebook Pixel solo carga si consented
+- **Pagina de cookies**: `/politica-cookies` con tabla detallada de cookies, base legal, instrucciones de gestion por navegador
+
+## Configuracion en BD (app_config)
+Claves editables desde /admin/settings:
+- `video_url` — URL del video VSL
+- `fb_pixel_id` — Pixel ID de Facebook (puede estar vacio para desactivar)
+- `school_url` — URL del CTA (comunidad School)
+- `privacy_url` — URL de la politica de privacidad
+- `privacy_link_text` — Texto visible del enlace de privacidad en el checkbox
 
 ## Convenciones
 - Tiempos en BD: Unix timestamps (segundos)
@@ -57,7 +77,8 @@ Incluye dashboard de analiticas por lead y emails automaticos de abandono.
 - CTA_TIMESTAMP_SECONDS: env var para configurar cuando aparece el boton CTA
 - Admin auth: password unico via ADMIN_PASSWORD env var (acceder en /admin)
 - Todo el contenido de cara al usuario esta en espanol
-- Facebook Pixel: se activa poniendo NEXT_PUBLIC_FB_PIXEL_ID en env vars; si esta vacio no carga
+- Cookie consent: localStorage key `cookie_consent` — null=no decidido, 'true'=aceptado, 'false'=rechazado
+- Facebook Pixel: solo se carga si `cookie_consent === 'true'` (compliance RGPD/ePrivacy)
 
 ## Variables de Entorno
 Ver `.env.example`. Todas las variables necesarias:
@@ -76,10 +97,10 @@ Ver `.env.example`. Todas las variables necesarias:
 - `CRON_SECRET=<secreto>` — Para autenticar llamadas al cron
 - `CTA_TIMESTAMP_SECONDS=1500` — Segundo del video donde aparece el CTA
 - `NEXT_PUBLIC_CTA_TIMESTAMP_SECONDS=1500` — Idem (publico para el cliente)
-- `SCHOOL_COMMUNITY_URL=https://...` — URL de la comunidad de School
-- `NEXT_PUBLIC_SCHOOL_COMMUNITY_URL=https://...` — Idem (publico)
+- `SCHOOL_COMMUNITY_URL=https://...` — URL de la comunidad de School (fallback si no hay en BD)
+- `NEXT_PUBLIC_SCHOOL_COMMUNITY_URL=https://...` — Idem (publico, fallback)
 - `NEXT_PUBLIC_BASE_URL=https://funnel-menopausia-app.vercel.app`
-- `NEXT_PUBLIC_FB_PIXEL_ID=` — ID del Pixel de Facebook (opcional)
+- `NEXT_PUBLIC_FB_PIXEL_ID=` — ID del Pixel de Facebook (fallback si no hay en BD; opcional)
 
 ## Reglas del Reproductor de Video
 1. NUNCA permitir adelantar el video (forward seek prohibido)
@@ -87,6 +108,13 @@ Ver `.env.example`. Todas las variables necesarias:
 3. Sin controles nativos del navegador (controls=false)
 4. maxReachedTime rastrea el punto mas lejano visto (se guarda en localStorage)
 5. CTA aparece solo cuando currentTime >= CTA_TIMESTAMP_SECONDS (no por tiempo en pagina)
+
+## Compliance Legal (RGPD / LSSI-CE / ePrivacy)
+- **Politica de Privacidad**: checkbox obligatorio en formulario; URL y texto configurables desde admin
+- **Politica de Cookies**: pagina estatica en /politica-cookies con tabla de cookies por tipo
+- **Cookie banner**: consentimiento previo al rastreo; Facebook Pixel no carga sin aceptacion
+- **Terminos y Condiciones**: no obligatorios para landing de captacion de leads (sin e-commerce)
+- **AEPD**: en caso de reclamacion, dirigir a https://www.aepd.es
 
 ## Deploy: Como subir a Vercel
 
