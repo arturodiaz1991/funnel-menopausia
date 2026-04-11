@@ -1,10 +1,19 @@
 import { sqliteTable, text, integer, real, uniqueIndex, index } from "drizzle-orm/sqlite-core";
 import { sql } from "drizzle-orm";
 
+export const funnels = sqliteTable("funnels", {
+  id: text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
+  name: text("name").notNull(),
+  isActive: integer("is_active", { mode: "boolean" }).notNull().default(true),
+  config: text("config").notNull().default("{}"), // JSON: landing_headline, landing_subheadline, landing_cta_text, video_url, cta_timestamp_seconds, school_url
+  createdAt: integer("created_at", { mode: "timestamp" }).notNull().default(sql`(unixepoch())`),
+});
+
 export const leads = sqliteTable("leads", {
   id: text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
   fullName: text("full_name").notNull(),
   email: text("email").notNull().unique(),
+  funnelId: text("funnel_id"),
   utmSource: text("utm_source"),
   utmMedium: text("utm_medium"),
   utmCampaign: text("utm_campaign"),
@@ -52,6 +61,7 @@ export const appConfig = sqliteTable("app_config", {
 export const pageViews = sqliteTable("page_views", {
   id: integer("id").primaryKey({ autoIncrement: true }),
   page: text("page").notNull(), // 'landing', 'vsl', etc.
+  funnelId: text("funnel_id"),
   createdAt: integer("created_at", { mode: "timestamp" }).notNull().default(sql`(unixepoch())`),
 }, (table) => [
   index("idx_page_views_page").on(table.page),

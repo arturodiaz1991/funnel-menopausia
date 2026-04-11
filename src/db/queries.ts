@@ -14,8 +14,8 @@ export async function setAppConfig(key: string, value: string): Promise<void> {
     .onConflictDoUpdate({ target: appConfig.key, set: { value, updatedAt: new Date() } });
 }
 
-export async function trackPageView(page: string): Promise<void> {
-  await db.insert(pageViews).values({ page, createdAt: new Date() });
+export async function trackPageView(page: string, funnelId?: string | null): Promise<void> {
+  await db.insert(pageViews).values({ page, funnelId: funnelId ?? null, createdAt: new Date() });
 }
 
 export async function getFunnelStats() {

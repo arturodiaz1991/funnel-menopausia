@@ -6,7 +6,7 @@ Cada vez que implementes una nueva funcionalidad, modifiques la estructura del p
 ## Descripcion del Proyecto
 Funnel de ventas para producto de bienestar en menopausia. Trafico desde Meta Ads.
 Flujo: Landing captacion (nombre + email) -> VSL con reproductor restringido -> CTA hacia Comunidad de School.
-Incluye dashboard de analiticas por lead y emails automaticos de abandono.
+Incluye dashboard de analiticas por lead, emails automaticos de abandono, y A/B testing de funnels.
 
 ## Tech Stack
 - **Framework**: Next.js 16 (App Router) + TypeScript
@@ -25,26 +25,32 @@ Incluye dashboard de analiticas por lead y emails automaticos de abandono.
 - `npx tsx scripts/migrate-turso.ts` — Aplicar migraciones a Turso remoto (requiere TURSO_DATABASE_URL y TURSO_AUTH_TOKEN)
 
 ## Estructura Clave
-- `src/app/page.tsx` — Landing de captacion (formulario + LandingTracker)
-- `src/app/vsl/page.tsx` — Pagina VSL (reproductor + CTA); lee video_url y school_url de BD
+- `src/app/page.tsx` — Landing de captacion: renderiza FunnelLanding (asigna funnel A/B automaticamente)
+- `src/app/vsl/page.tsx` — Pagina VSL; lee config global de BD y override por funnel asignado en cookie
 - `src/app/politica-cookies/page.tsx` — Politica de cookies (estatica, robots: noindex)
 - `src/app/admin/` — Dashboard de admin (acceso en /admin, contrasena en ADMIN_PASSWORD)
 - `src/app/admin/leads/page.tsx` — Lista de leads + boton exportar
-- `src/app/admin/settings/page.tsx` — Configuracion: video URL, Facebook Pixel ID, School URL, Politica Privacidad, banner de cookies, email de contacto, flujo del funnel (skip landing), CTA timestamp (segundos), timeout de abandono (minutos), reset consentimiento cookies, cron manual
+- `src/app/admin/ab-testing/page.tsx` — Gestion y comparacion de funnels A/B: CRUD de variantes, stats por funnel, banner ganador
+- `src/app/admin/settings/page.tsx` — Configuracion global: video URL, Facebook Pixel ID, School URL, Politica Privacidad, banner de cookies, email de contacto, flujo del funnel (skip landing), CTA timestamp (segundos), timeout de abandono (minutos), reset consentimiento cookies, cron manual
 - `src/app/api/` — API routes
+- `src/app/api/funnel/assign/route.ts` — GET: asigna funnel A/B aleatorio al visitante (cookie funnel_id), devuelve config del funnel
+- `src/app/api/admin/funnels/route.ts` — GET: lista funnels; POST: crear funnel
+- `src/app/api/admin/funnels/[id]/route.ts` — PATCH: editar funnel; DELETE: eliminar funnel
+- `src/app/api/admin/ab-stats/route.ts` — GET: metricas comparativas por funnel (visitas, leads, VSL, CTA, conversiones)
 - `src/app/api/admin/export/route.ts` — GET: exportar leads a CSV con filtros
 - `src/app/api/config/public/route.ts` — GET publico (sin auth): devuelve privacy_url, privacy_link_text, cookie_banner_enabled, contact_email
-- `src/app/api/track/pageview/route.ts` — POST anonimo: registra visita a landing en page_views
+- `src/app/api/track/pageview/route.ts` — POST anonimo: registra visita a landing en page_views (acepta funnelId)
+- `src/components/funnel-landing.tsx` — Client component: llama a /api/funnel/assign, aplica config dinamica (titular, subtitulo, CTA text), renderiza LeadForm
 - `src/components/video-player.tsx` — Reproductor restringido (NO adelantar)
 - `src/components/facebook-pixel.tsx` — Pixel de Facebook: solo carga si cookie_consent=true en localStorage
 - `src/components/pixel-loader.tsx` — Server component: lee fb_pixel_id de BD y pasa a FacebookPixel
 - `src/components/cookie-banner.tsx` — Banner de consentimiento de cookies (aparece en primera visita)
-- `src/components/landing-tracker.tsx` — Client component: dispara POST /api/track/pageview al montar
-- `src/components/lead-form.tsx` — Formulario con checkbox RGPD obligatorio (muestra error si no marcado)
+- `src/components/landing-tracker.tsx` — Client component: dispara POST /api/track/pageview al montar (acepta funnelId prop)
+- `src/components/lead-form.tsx` — Formulario con checkbox RGPD obligatorio; acepta funnelId y ctaText como props
 - `src/components/admin/export-modal.tsx` — Modal de exportacion con filtros
-- `src/db/schema.ts` — Esquema de BD (fuente de verdad): leads, video_events, lead_sessions, email_log, app_config, page_views
+- `src/db/schema.ts` — Esquema de BD (fuente de verdad): funnels, leads, video_events, lead_sessions, email_log, app_config, page_views
 - `src/db/index.ts` — Conexion DB: usa TURSO_DATABASE_URL si existe, sino DATABASE_URL (local)
-- `src/db/queries.ts` — Queries reutilizables incl. getLeadsForExport(), trackPageView(), getFunnelStats() (con landingVisits)
+- `src/db/queries.ts` — Queries reutilizables incl. getLeadsForExport(), trackPageView(page, funnelId?), getFunnelStats()
 - `src/lib/email-templates/` — Plantillas de email (6 segmentos de abandono)
 - `src/lib/config.ts` — Config centralizada desde env vars
 - `vercel.json` — Cron de abandono configurado (1x/dia a las 8am — free tier Vercel)
@@ -52,8 +58,9 @@ Incluye dashboard de analiticas por lead y emails automaticos de abandono.
 
 ## Funcionalidades Implementadas
 - **Landing** (`/`): Formulario nombre+email, captura UTMs, email bienvenida, redirige a /vsl; checkbox RGPD obligatorio con enlace a politica de privacidad configurable desde admin
-- **Tracking visitas landing**: LandingTracker dispara POST /api/track/pageview; tabla page_views en BD; primer paso del embudo en admin
-- **VSL** (`/vsl`): Reproductor restringido (no adelantar), CTA aparece en minuto configurable; school_url leida de BD
+- **A/B Testing de funnels** (`/admin/ab-testing`): Crear variantes con nombre, titular, subtitulo, texto CTA, video_url, school_url, cta_timestamp_seconds propios. Cada visitante es asignado aleatoriamente a un funnel activo (cookie funnel_id). Si hay un solo funnel activo, todos lo ven. Stats comparativas por funnel con banner del ganador, tabla y grafico de barras. El ganador se calcula por conversion global (visitas landing -> click CTA).
+- **Tracking visitas landing**: LandingTracker dispara POST /api/track/pageview con funnelId; tabla page_views en BD; primer paso del embudo en admin
+- **VSL** (`/vsl`): Reproductor restringido (no adelantar), CTA aparece en segundo configurable; override de video_url/school_url/cta_timestamp por funnel asignado
 - **Tracking**: Eventos de video (play, pause, seek, timeupdate) guardados en BD por lead
 - **Emails abandono**: 6 segmentos segun minuto de abandono, cron diario a las 8am
 - **Admin dashboard** (`/admin`): Stats generales, embudo 5 pasos (landing visits -> leads -> VSL -> CTA mostrado -> CTA clickeado), heatmap de retencion
@@ -69,8 +76,27 @@ Incluye dashboard de analiticas por lead y emails automaticos de abandono.
 - **Email de contacto configurable**: editable desde /admin/settings (key contact_email); se muestra en /politica-cookies
 - **Skip landing**: toggle en /admin/settings para redirigir directamente a /vsl sin mostrar la landing de captacion (key skip_landing)
 
+## Esquema de BD
+7 tablas:
+- **funnels**: id, name, is_active, config (JSON), created_at — variantes A/B
+- **leads**: id, full_name, email, funnel_id, utm_*, ip_address, user_agent, timestamps
+- **video_events**: id, lead_id, session_id, event_type, timestamp_sec, metadata, created_at
+- **lead_sessions**: id, lead_id, started_at, last_active_at, max_timestamp_sec, abandoned_at_sec, cta_shown, cta_clicked
+- **email_log**: id, lead_id, email_type, template_key, sent_at, resend_id, status
+- **app_config**: key, value, updated_at
+- **page_views**: id, page, funnel_id, created_at
+
+## A/B Testing — Como funciona
+1. Crear variantes en `/admin/ab-testing` (al menos 2 activas para test real)
+2. Cada visitante a `/` llama a `GET /api/funnel/assign` que asigna un funnel aleatorio y lo guarda en cookie `funnel_id` (30 dias)
+3. `FunnelLanding` aplica el titular/subtitulo/CTA text del funnel asignado
+4. `LeadForm` guarda `funnelId` con el lead al registrarse
+5. `LandingTracker` guarda `funnelId` con la visita en `page_views`
+6. `/vsl/page.tsx` lee la cookie `funnel_id` y aplica el `video_url`/`school_url`/`cta_timestamp_seconds` especifico del funnel (override sobre config global)
+7. Stats en `/admin/ab-testing` muestran metricas separadas por funnel y el ganador
+
 ## Configuracion en BD (app_config)
-Claves editables desde /admin/settings:
+Claves editables desde /admin/settings (valores globales, pueden ser sobreescritos por config de funnel A/B):
 - `video_url` — URL del video VSL
 - `fb_pixel_id` — Pixel ID de Facebook (puede estar vacio para desactivar)
 - `school_url` — URL del CTA (comunidad School)
@@ -82,6 +108,15 @@ Claves editables desde /admin/settings:
 - `cta_timestamp_seconds` — Segundo del video donde aparece el CTA (fallback: env var CTA_TIMESTAMP_SECONDS)
 - `abandonment_timeout_minutes` — Minutos de inactividad para considerar sesion abandonada (fallback: 30)
 
+## Configuracion de Funnel A/B (campo config JSON en tabla funnels)
+Claves configurables por variante (todas opcionales — si vacio usa el valor global):
+- `landing_headline` — Titular principal de la landing
+- `landing_subheadline` — Subtitulo/descripcion de la landing
+- `landing_cta_text` — Texto del boton del formulario
+- `video_url` — URL del video VSL especifica para esta variante
+- `school_url` — URL del CTA especifica para esta variante
+- `cta_timestamp_seconds` — Segundo de aparicion del CTA especifico para esta variante
+
 ## Convenciones
 - Tiempos en BD: Unix timestamps (segundos)
 - Timestamps de video: en segundos (REAL), no milisegundos
@@ -91,6 +126,7 @@ Claves editables desde /admin/settings:
 - Todo el contenido de cara al usuario esta en espanol
 - Cookie consent: localStorage key `cookie_consent` — null=no decidido, 'true'=aceptado, 'false'=rechazado
 - Facebook Pixel: solo se carga si `cookie_consent === 'true'` (compliance RGPD/ePrivacy)
+- Funnel asignado: cookie `funnel_id` (httpOnly=false para legibilidad client-side), 30 dias
 
 ## Variables de Entorno
 Ver `.env.example`. Todas las variables necesarias:

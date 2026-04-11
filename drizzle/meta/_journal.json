@@ -15,6 +15,20 @@
       "when": 1775571579134,
       "tag": "0001_new_paibok",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1775599626464,
+      "tag": "0002_nasty_wendigo",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "6",
+      "when": 1775868354936,
+      "tag": "0003_green_steve_rogers",
+      "breakpoints": true
     }
   ]
 }

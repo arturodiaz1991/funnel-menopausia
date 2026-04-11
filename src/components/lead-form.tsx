@@ -3,7 +3,13 @@
 import { useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 
-export default function LeadForm() {
+export default function LeadForm({
+  funnelId,
+  ctaText = "Acceder a la Clase Gratuita",
+}: {
+  funnelId?: string | null;
+  ctaText?: string;
+}) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [fullName, setFullName] = useState("");
@@ -44,6 +50,7 @@ export default function LeadForm() {
         body: JSON.stringify({
           fullName,
           email,
+          funnelId: funnelId ?? null,
           utmSource: searchParams.get("utm_source"),
           utmMedium: searchParams.get("utm_medium"),
           utmCampaign: searchParams.get("utm_campaign"),
@@ -141,7 +148,7 @@ export default function LeadForm() {
         disabled={loading}
         className="w-full rounded-xl bg-primary px-6 py-3.5 text-base font-semibold text-white transition-colors hover:bg-primary-hover disabled:opacity-50 disabled:cursor-not-allowed"
       >
-        {loading ? "Registrando..." : "Acceder a la Clase Gratuita"}
+        {loading ? "Registrando..." : ctaText}
       </button>
 
       <p className="text-xs text-center text-muted">
