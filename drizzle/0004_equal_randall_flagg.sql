@@ -1,0 +1,1 @@
+ALTER TABLE `leads` ADD `extra_data` text;

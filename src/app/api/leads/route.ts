@@ -8,7 +8,7 @@ import { config } from "@/lib/config";
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { fullName, email, funnelId, utmSource, utmMedium, utmCampaign, utmContent, utmTerm } = body;
+    const { fullName, email, funnelId, extraData, utmSource, utmMedium, utmCampaign, utmContent, utmTerm } = body;
 
     if (!fullName || !email) {
       return NextResponse.json({ error: "Nombre y email son obligatorios" }, { status: 400 });
@@ -34,6 +34,7 @@ export async function POST(request: NextRequest) {
         fullName: fullName.trim(),
         email: email.toLowerCase().trim(),
         funnelId: funnelId || null,
+        extraData: extraData ? JSON.stringify(extraData) : null,
         utmSource: utmSource || null,
         utmMedium: utmMedium || null,
         utmCampaign: utmCampaign || null,

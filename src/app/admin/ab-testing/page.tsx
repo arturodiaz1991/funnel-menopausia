@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import Link from "next/link";
 import { useAdmin } from "../layout";
 
 interface FunnelConfig {
@@ -387,6 +388,12 @@ export default function ABTestingPage() {
                       </span>
                     </div>
                     <div className="flex gap-2 shrink-0">
+                      <Link
+                        href={`/admin/ab-testing/${funnel.id}/builder`}
+                        className="text-xs px-3 py-1.5 rounded-lg border border-primary/30 bg-primary/5 text-primary hover:bg-primary/10 transition-colors font-medium"
+                      >
+                        Diseñar
+                      </Link>
                       <button
                         onClick={() => startEdit(funnel)}
                         className="text-xs px-3 py-1.5 rounded-lg border border-foreground/10 text-muted hover:bg-foreground/5 transition-colors"

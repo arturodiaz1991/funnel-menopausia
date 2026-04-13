@@ -21,6 +21,7 @@ export const leads = sqliteTable("leads", {
   utmTerm: text("utm_term"),
   ipAddress: text("ip_address"),
   userAgent: text("user_agent"),
+  extraData: text("extra_data"), // JSON: values from extra form fields added in the visual builder
   createdAt: integer("created_at", { mode: "timestamp" }).notNull().default(sql`(unixepoch())`),
   updatedAt: integer("updated_at", { mode: "timestamp" }).notNull().default(sql`(unixepoch())`),
 });

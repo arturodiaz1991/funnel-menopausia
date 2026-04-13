@@ -8,6 +8,21 @@ function checkAuth(request: NextRequest) {
   return request.headers.get("x-admin-password") === config.adminPassword;
 }
 
+export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  if (!checkAuth(request)) {
+    return NextResponse.json({ error: "No autorizado" }, { status: 401 });
+  }
+  try {
+    const { id } = await params;
+    const funnel = await db.select().from(funnels).where(eq(funnels.id, id)).get();
+    if (!funnel) return NextResponse.json({ error: "No encontrado" }, { status: 404 });
+    return NextResponse.json({ ...funnel, config: JSON.parse(funnel.config || "{}") });
+  } catch (error) {
+    console.error("Error fetching funnel:", error);
+    return NextResponse.json({ error: "Error interno" }, { status: 500 });
+  }
+}
+
 export async function PATCH(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   if (!checkAuth(request)) {
     return NextResponse.json({ error: "No autorizado" }, { status: 401 });
