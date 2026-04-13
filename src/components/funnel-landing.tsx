@@ -3,7 +3,7 @@
 import { useState, useEffect, Suspense } from "react";
 import LeadForm from "@/components/lead-form";
 import LandingTracker from "@/components/landing-tracker";
-import { FunnelDesignConfig, FONT_OPTIONS, loadGoogleFont, DEFAULT_FIELDS } from "@/components/funnel-preview";
+import { FunnelDesignConfig, FONT_OPTIONS, loadGoogleFont } from "@/components/funnel-preview";
 
 const DEFAULT_HEADLINE = "Reduce el insomnio en la menopausia";
 const DEFAULT_SUBHEADLINE =
@@ -124,7 +124,7 @@ export default function FunnelLanding() {
                 funnelId={funnelId}
                 ctaText={ready ? ctaText : DEFAULT_CTA_TEXT}
                 designConfig={funnelConfig}
-                extraFields={funnelConfig.extra_form_fields || DEFAULT_FIELDS.slice(0) as any}
+                extraFields={funnelConfig.extra_form_fields || []}
               />
             </div>
           </Suspense>
