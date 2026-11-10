@@ -40,6 +40,9 @@ Incluye dashboard de analiticas por lead, emails automaticos de abandono, y A/B 
 - `src/app/api/admin/export/route.ts` — GET: exportar leads a CSV con filtros
 - `src/app/api/config/public/route.ts` — GET publico (sin auth): devuelve privacy_url, privacy_link_text, cookie_banner_enabled, contact_email
 - `src/app/api/track/pageview/route.ts` — POST anonimo: registra visita a landing en page_views (acepta funnelId)
+- `design-references/` — Carpeta local (no subida a git) con imagenes de referencia de diseño para rediseñar la landing. Ver INSTRUCCIONES.md dentro de la carpeta.
+- `src/components/funnel-preview.tsx` — Tipos compartidos (FunnelDesignConfig, FormField), utilidades (FONT_OPTIONS, RADIUS_MAP, getButtonStyles, loadGoogleFont) y componente de preview en vivo usado por el builder
+- `src/app/admin/ab-testing/[id]/builder/page.tsx` — Editor visual de funnel: sidebar con 7 pestañas (Contenido, Colores, Tipografia, Boton, Formulario, Imagenes, VSL) + preview en vivo con toggle movil/escritorio
 - `src/components/funnel-landing.tsx` — Client component: llama a /api/funnel/assign, aplica config dinamica (titular, subtitulo, CTA text), renderiza LeadForm
 - `src/components/video-player.tsx` — Reproductor restringido (NO adelantar)
 - `src/components/facebook-pixel.tsx` — Pixel de Facebook: solo carga si cookie_consent=true en localStorage
@@ -75,6 +78,8 @@ Incluye dashboard de analiticas por lead, emails automaticos de abandono, y A/B 
 - **Banner de cookies configurable**: activar/desactivar desde /admin/settings (key cookie_banner_enabled)
 - **Email de contacto configurable**: editable desde /admin/settings (key contact_email); se muestra en /politica-cookies
 - **Skip landing**: toggle en /admin/settings para redirigir directamente a /vsl sin mostrar la landing de captacion (key skip_landing)
+- **Visual Funnel Builder** (`/admin/ab-testing/{id}/builder`): Editor visual completo para cada variante A/B. Sidebar de 7 pestañas — Contenido (titular/subtitulo/CTA), Colores (8 presets + pickers individuales), Tipografia (7 fuentes Google + peso), Boton (estilo/radio/sombra), Formulario (campos extra CRUD), Imagenes (logo/hero/fondo), VSL (video url/school url/cta timestamp). Preview en vivo con toggle movil/escritorio.
+- **Rediseño por referencias visuales**: Subir imagenes a `design-references/` y pedirle a Claude que rediseñe la landing basandose en ellas. Claude extrae tokens de diseño (colores, tipografia, estilo de boton) y los aplica via PATCH a `/api/admin/funnels/{id}` sin necesidad de deploy.
 
 ## Esquema de BD
 7 tablas:
